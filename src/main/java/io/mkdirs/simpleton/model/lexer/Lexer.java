@@ -37,7 +37,14 @@ public class Lexer {
 
                 Optional<LexerSubParsingResult> result = null;
 
-                switch(chars[charIndex]){
+                Character car = chars[charIndex];
+
+                if(Character.isWhitespace(car)){
+                    this.charIndex++;
+                    continue;
+                }
+
+                switch(car){
                     case '+':
                         tokens.add(new Token(TokenType.PLUS));
                         break;
@@ -57,8 +64,13 @@ public class Lexer {
                         result = parseString();
                         break;
                     default:
-                        pushError("Unexpected token", this.charIndex);
-                        skipLine = true;
+
+                        if(Character.isDigit(car)){
+                            result = parseNumber();
+                        }else{
+                            pushError("Unexpected token", this.charIndex);
+                            skipLine = true;
+                        }
                         break;
                 }
 
@@ -71,7 +83,7 @@ public class Lexer {
                     }
                 }
 
-                if(!skipLine)
+                if(skipLine)
                     break;
 
 
@@ -127,14 +139,35 @@ public class Lexer {
             return Optional.empty();
         }
 
-        //End
-        if(seekTo(this.charIndex+2) != '\'') {
-            pushError("Unclosed character literal", this.charIndex+2, 1);
+        int offset = 1;
+        String value = "";
+        boolean closed = false;
+        while(seekTo(this.charIndex+offset) != '\'' && seekTo(this.charIndex+offset) != Character.LINE_SEPARATOR && seekTo(this.charIndex+offset) != Character.UNASSIGNED){
+
+            value += seekTo(this.charIndex+offset);
+            offset++;
+        }
+
+        if(seekTo(this.charIndex+offset) == '\'')
+            closed = true;
+
+        if(!closed){
+            pushError("Unclosed character literal", this.charIndex+offset, 1);
             return Optional.empty();
         }
 
-        Character car = seekTo(this.charIndex+1);
-        LexerSubParsingResult result = new LexerSubParsingResult(new Token(TokenType.CHARACTER, car.toString()), 2);
+        if(value.length() == 0){
+            pushError("Empty character literal", this.charIndex, 2);
+            return Optional.empty();
+        }
+
+        if(value.length() > 1){
+            pushError("Too many characters in character literal", this.charIndex, offset+1);
+            return Optional.empty();
+        }
+
+
+        LexerSubParsingResult result = new LexerSubParsingResult(new Token(TokenType.CHARACTER_LITERAL, value), offset);
         return Optional.of(result);
     }
 
@@ -149,23 +182,58 @@ public class Lexer {
         int offset = 1;
         String string = "";
 
-        while(seekTo(this.charIndex+offset) != '\"' && seekTo(this.charIndex+offset) != Character.LINE_SEPARATOR && seekTo(this.charIndex+offset) != Character.UNASSIGNED){
+        while(seekTo(this.charIndex+offset) != '\"'&& seekTo(this.charIndex+offset) != Character.LINE_SEPARATOR && seekTo(this.charIndex+offset) != Character.UNASSIGNED){
 
             string += seekTo(this.charIndex+offset);
             offset++;
-
-            if(seekTo(this.charIndex+offset) == '\"')
-                closed = true;
         }
 
 
+        if(seekTo(this.charIndex+offset) == '\"')
+            closed = true;
 
         if(!closed){
-            pushError("Unclosed string literal", this.charIndex+string.length()+1, 1);
+            pushError("Unclosed string literal", this.charIndex+offset, 1);
             return Optional.empty();
         }
 
-        LexerSubParsingResult result = new LexerSubParsingResult(new Token(TokenType.STRING, string), offset+1);
+        LexerSubParsingResult result = new LexerSubParsingResult(new Token(TokenType.STRING_LITERAL, string), offset);
+        return Optional.of(result);
+    }
+
+    private Optional<LexerSubParsingResult> parseNumber(){
+        if(!Character.isDigit(seekTo(this.charIndex))){
+            pushError("Unexpected error", this.charIndex, 1);
+            return Optional.empty();
+        }
+
+        String rawValue = "";
+        boolean isInteger = true;
+        int offset = 0;
+
+        while(Character.isDigit(seekTo(this.charIndex+offset))){
+            rawValue += seekTo(this.charIndex+offset);
+            offset++;
+
+            if(seekTo(this.charIndex+offset) == '.') {
+                isInteger = false;
+                rawValue+='.';
+                offset++;
+            }
+        }
+
+        if(!isInteger){
+
+        }
+
+        TokenType type = null;
+        if(isInteger)
+            type = TokenType.INTEGER_LITERAL;
+        else
+            type = TokenType.FLOAT_LITERAL;
+
+        LexerSubParsingResult result = new LexerSubParsingResult(new Token(type, rawValue), offset-1);
+
         return Optional.of(result);
     }
 
