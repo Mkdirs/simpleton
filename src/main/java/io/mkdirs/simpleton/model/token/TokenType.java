@@ -12,6 +12,9 @@ public enum TokenType {
     MINUS,
     TIMES,
     DIVIDE,
+    AND,
+    OR,
+    EXCLAMATION_MARK,
 
     END_OF_LINE
 }

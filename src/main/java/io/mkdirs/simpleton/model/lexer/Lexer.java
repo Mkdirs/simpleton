@@ -57,6 +57,29 @@ public class Lexer {
                     case '/':
                         tokens.add(new Token(TokenType.DIVIDE));
                         break;
+                    case '!':
+                        tokens.add(new Token(TokenType.EXCLAMATION_MARK));
+                        break;
+                    case '&':
+                        if(seekTo(this.charIndex+1) == '&') {
+                            tokens.add(new Token(TokenType.AND));
+                            this.charIndex++;
+                        }else{
+                            pushError("Expected character '&'", this.charIndex+1, 1);
+                        }
+
+                        break;
+
+                    case '|':
+                        if(seekTo(this.charIndex+1) == '|'){
+                            tokens.add(new Token(TokenType.OR));
+                            this.charIndex++;
+                            break;
+                        }else{
+                            pushError("Expected character '|'", this.charIndex+1, 1);
+                            break;
+                        }
+
                     case '\'':
                         result = parseCharacter();
                         break;
@@ -65,8 +88,14 @@ public class Lexer {
                         break;
                     default:
 
-                        if(Character.isDigit(car)){
+                        if(Character.isDigit(car)) {
                             result = parseNumber();
+                        }else if(nextToName("true")) {
+                            tokens.add(new Token(TokenType.BOOLEAN_LITERAL, "true"));
+                            this.charIndex+=3;
+                        }else if(nextToName("false")){
+                            tokens.add(new Token(TokenType.BOOLEAN_LITERAL, "false"));
+                            this.charIndex+=4;
                         }else{
                             pushError("Unexpected token", this.charIndex);
                             skipLine = true;
@@ -101,6 +130,15 @@ public class Lexer {
 
     public List<String> getErrorStack(){
         return this.errorStack;
+    }
+
+    private boolean nextToName(String s){
+        if(this.charIndex+s.length() > this.lines[this.lineIndex].length())
+            return false;
+
+        String extracted = this.lines[this.lineIndex].substring(this.charIndex, this.charIndex+s.length());
+
+        return extracted.equals(s);
     }
 
     private Character seekTo(int lineIndex, int charIndex){
