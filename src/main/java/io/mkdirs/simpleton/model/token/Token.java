@@ -2,8 +2,8 @@ package io.mkdirs.simpleton.model.token;
 
 public class Token {
     private final TokenType type;
-    private final Object literal;
-    public Token(TokenType type, Object literal){
+    private final String literal;
+    public Token(TokenType type, String literal){
         this.type = type;
         this.literal = literal;
     }
@@ -18,7 +18,7 @@ public class Token {
         return type;
     }
 
-    public Object getLiteral() {
+    public String getLiteral() {
         return literal;
     }
 }
