@@ -1,4 +1,4 @@
-package io.mkdirs.simpleton.model.lexer;
+package io.mkdirs.simpleton.lexer;
 
 import io.mkdirs.simpleton.model.token.Token;
 import io.mkdirs.simpleton.model.token.TokenType;

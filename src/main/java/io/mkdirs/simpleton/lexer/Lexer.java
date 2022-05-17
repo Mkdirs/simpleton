@@ -1,4 +1,4 @@
-package io.mkdirs.simpleton.model.lexer;
+package io.mkdirs.simpleton.lexer;
 
 import io.mkdirs.simpleton.model.token.Token;
 import io.mkdirs.simpleton.model.token.TokenType;
@@ -120,12 +120,26 @@ public class Lexer {
                         }else if(isText("true")) {
                             tokens.add(new Token(TokenType.BOOLEAN_LITERAL, "true"));
                             this.charIndex+=3;
-                        }else if(isText("false")){
+                        }else if(isText("false")) {
                             tokens.add(new Token(TokenType.BOOLEAN_LITERAL, "false"));
-                            this.charIndex+=4;
+                            this.charIndex += 4;
+                        }else if(isText("int")) {
+                            tokens.add(new Token(TokenType.INT_KW));
+                            this.charIndex += 2;
+                        }else if(isText("float")) {
+                            tokens.add(new Token(TokenType.FLOAT_KW));
+                            this.charIndex += 4;
+                        }else if(isText("string")) {
+                            tokens.add(new Token(TokenType.STRING_KW));
+                            this.charIndex += 5;
+                        }else if(isText("char")) {
+                            tokens.add(new Token(TokenType.CHAR_KW));
+                            this.charIndex += 3;
+                        }else if(isText("bool")){
+                            tokens.add(new Token(TokenType.BOOL_KW));
+                            this.charIndex+=3;
                         }else{
-                            pushError("Unexpected token", this.charIndex);
-                            skipLine = true;
+                            result = parseVariableName();
                         }
                         break;
                 }
@@ -168,6 +182,7 @@ public class Lexer {
         return extracted.equals(s);
     }
 
+
     private Character seekTo(int lineIndex, int charIndex){
         if(lineIndex < 0 || lineIndex >= this.lines.length)
             return Character.UNASSIGNED;
@@ -195,6 +210,22 @@ public class Lexer {
 
     private void pushError(String message, int charStartIndex){
         pushError(message, charStartIndex, this.lines[this.lineIndex].length()-charStartIndex);
+    }
+
+    private Optional<LexerSubParsingResult> parseVariableName(){
+
+        String name = "";
+        int offset = 0;
+        while(seekTo(this.charIndex+offset) != ' ' && seekTo(this.charIndex+offset) != Character.LINE_SEPARATOR && seekTo(this.charIndex+offset) != Character.UNASSIGNED){
+            name += seekTo(this.charIndex+offset);
+            offset++;
+        }
+
+        if(name.isEmpty())
+            return Optional.empty();
+
+        LexerSubParsingResult result = new LexerSubParsingResult(new Token(TokenType.VARIABLE_NAME, name), offset);
+        return Optional.of(result);
     }
 
     private Optional<LexerSubParsingResult> parseCharacter(){
