@@ -17,6 +17,9 @@ public enum TokenType {
     EXCLAMATION_MARK,
     GREATER_THAN,
     SMALLER_THAN,
+    EQUALITY,
+    INEQUALITY,
+    ASSIGN,
 
     END_OF_LINE
 }

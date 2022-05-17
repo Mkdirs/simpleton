@@ -62,7 +62,12 @@ public class Lexer {
                         break;
 
                     case '!':
-                        tokens.add(new Token(TokenType.EXCLAMATION_MARK));
+                        if(seekTo(this.charIndex+1) == '='){
+                            tokens.add(new Token(TokenType.INEQUALITY));
+                            this.charIndex++;
+                        }else
+                            tokens.add(new Token(TokenType.EXCLAMATION_MARK));
+
                         break;
 
                     case '>':
@@ -71,6 +76,15 @@ public class Lexer {
 
                     case '<':
                         tokens.add(new Token(TokenType.SMALLER_THAN));
+                        break;
+
+                    case '=':
+                        if(seekTo(this.charIndex+1) == '=') {
+                            tokens.add(new Token(TokenType.EQUALITY));
+                            this.charIndex++;
+                        }else
+                            tokens.add(new Token(TokenType.ASSIGN));
+
                         break;
 
                     case '&':
