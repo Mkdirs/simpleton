@@ -48,18 +48,31 @@ public class Lexer {
                     case '+':
                         tokens.add(new Token(TokenType.PLUS));
                         break;
+
                     case '-':
                         tokens.add(new Token(TokenType.MINUS));
                         break;
+
                     case '*':
                         tokens.add(new Token(TokenType.TIMES));
                         break;
+
                     case '/':
                         tokens.add(new Token(TokenType.DIVIDE));
                         break;
+
                     case '!':
                         tokens.add(new Token(TokenType.EXCLAMATION_MARK));
                         break;
+
+                    case '>':
+                        tokens.add(new Token(TokenType.GREATER_THAN));
+                        break;
+
+                    case '<':
+                        tokens.add(new Token(TokenType.SMALLER_THAN));
+                        break;
+
                     case '&':
                         if(seekTo(this.charIndex+1) == '&') {
                             tokens.add(new Token(TokenType.AND));
@@ -74,11 +87,11 @@ public class Lexer {
                         if(seekTo(this.charIndex+1) == '|'){
                             tokens.add(new Token(TokenType.OR));
                             this.charIndex++;
-                            break;
                         }else{
                             pushError("Expected character '|'", this.charIndex+1, 1);
-                            break;
                         }
+
+                        break;
 
                     case '\'':
                         result = parseCharacter();

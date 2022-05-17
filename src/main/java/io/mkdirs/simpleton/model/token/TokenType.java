@@ -15,6 +15,8 @@ public enum TokenType {
     AND,
     OR,
     EXCLAMATION_MARK,
+    GREATER_THAN,
+    SMALLER_THAN,
 
     END_OF_LINE
 }
