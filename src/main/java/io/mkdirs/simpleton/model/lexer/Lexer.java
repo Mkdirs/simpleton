@@ -33,7 +33,7 @@ public class Lexer {
             char[] chars = line.toCharArray();
             this.charIndex = 0;
             boolean skipLine = false;
-            while(this.charIndex < chars.length && !skipLine){
+            while(this.charIndex < chars.length){
 
                 Optional<LexerSubParsingResult> result = null;
 
@@ -62,7 +62,7 @@ public class Lexer {
                         break;
 
                     case '!':
-                        if(seekTo(this.charIndex+1) == '='){
+                        if(isText("!=")){
                             tokens.add(new Token(TokenType.INEQUALITY));
                             this.charIndex++;
                         }else
@@ -79,7 +79,7 @@ public class Lexer {
                         break;
 
                     case '=':
-                        if(seekTo(this.charIndex+1) == '=') {
+                        if(isText("==")) {
                             tokens.add(new Token(TokenType.EQUALITY));
                             this.charIndex++;
                         }else
@@ -88,7 +88,7 @@ public class Lexer {
                         break;
 
                     case '&':
-                        if(seekTo(this.charIndex+1) == '&') {
+                        if(isText("&&")) {
                             tokens.add(new Token(TokenType.AND));
                             this.charIndex++;
                         }else{
@@ -98,7 +98,7 @@ public class Lexer {
                         break;
 
                     case '|':
-                        if(seekTo(this.charIndex+1) == '|'){
+                        if(isText("||")){
                             tokens.add(new Token(TokenType.OR));
                             this.charIndex++;
                         }else{
@@ -117,10 +117,10 @@ public class Lexer {
 
                         if(Character.isDigit(car)) {
                             result = parseNumber();
-                        }else if(nextToName("true")) {
+                        }else if(isText("true")) {
                             tokens.add(new Token(TokenType.BOOLEAN_LITERAL, "true"));
                             this.charIndex+=3;
-                        }else if(nextToName("false")){
+                        }else if(isText("false")){
                             tokens.add(new Token(TokenType.BOOLEAN_LITERAL, "false"));
                             this.charIndex+=4;
                         }else{
@@ -159,7 +159,7 @@ public class Lexer {
         return this.errorStack;
     }
 
-    private boolean nextToName(String s){
+    private boolean isText(String s){
         if(this.charIndex+s.length() > this.lines[this.lineIndex].length())
             return false;
 
