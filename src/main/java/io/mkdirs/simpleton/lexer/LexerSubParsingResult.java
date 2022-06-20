@@ -1,9 +1,6 @@
 package io.mkdirs.simpleton.lexer;
 
 import io.mkdirs.simpleton.model.token.Token;
-import io.mkdirs.simpleton.model.token.TokenType;
-
-import java.util.Optional;
 
 public class LexerSubParsingResult {
 
@@ -17,9 +14,11 @@ public class LexerSubParsingResult {
         this.charsToSkip = charsToSkip;
     }
 
+
     public Token getToken() {
         return this.token;
     }
+
 
     public Integer getCharsToSkip() {
         return this.charsToSkip;

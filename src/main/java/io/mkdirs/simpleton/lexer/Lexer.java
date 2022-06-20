@@ -1,11 +1,9 @@
 package io.mkdirs.simpleton.lexer;
 
 import io.mkdirs.simpleton.model.token.Token;
-import io.mkdirs.simpleton.model.token.TokenType;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.function.Function;
 
 public class Lexer {
 
@@ -44,52 +42,78 @@ public class Lexer {
                     continue;
                 }
 
-                switch(car){
+                var literalMatch = Token.values().stream().map(Token::getLiteral)
+                        .filter(Objects::nonNull)
+                        .filter(this::isText)
+                        .findFirst();
+
+                if(literalMatch.isPresent()){
+                    String literal = literalMatch.get();
+                    tokens.add(Token.values().stream().filter(token -> literal.equals(token.getLiteral()) ).findFirst().get());
+                    charIndex+=(literal.length()-1);
+                }else if(Character.isDigit(car)){
+                    result = parseNumber();
+                }else{
+                    result = parseVariableName();
+                }
+
+
+
+
+                /*switch(car){
                     case '+':
-                        tokens.add(new Token(TokenType.PLUS));
+                        tokens.add(Token.PLUS);
                         break;
 
                     case '-':
-                        tokens.add(new Token(TokenType.MINUS));
+                        tokens.add(new Token(Token.MINUS));
                         break;
 
                     case '*':
-                        tokens.add(new Token(TokenType.TIMES));
+                        tokens.add(new Token(Token.TIMES));
                         break;
 
                     case '/':
-                        tokens.add(new Token(TokenType.DIVIDE));
+                        tokens.add(new Token(Token.DIVIDE));
+                        break;
+
+                    case '>':
+                        tokens.add(new Token(Token.GREATER_THAN));
+                        break;
+
+                    case '<':
+                        tokens.add(new Token(Token.SMALLER_THAN));
+                        break;
+
+                    case '(':
+                        tokens.add(new Token(Token.LEFT_PARENTHESIS));
+                        break;
+
+                    case ')':
+                        tokens.add(new Token(Token.RIGHT_PARENTHESIS));
                         break;
 
                     case '!':
                         if(isText("!=")){
-                            tokens.add(new Token(TokenType.INEQUALITY));
+                            tokens.add(new Token(Token.INEQUALITY));
                             this.charIndex++;
                         }else
-                            tokens.add(new Token(TokenType.EXCLAMATION_MARK));
+                            pushError("Unexpected character '!'", this.charIndex+1, 1);
 
-                        break;
-
-                    case '>':
-                        tokens.add(new Token(TokenType.GREATER_THAN));
-                        break;
-
-                    case '<':
-                        tokens.add(new Token(TokenType.SMALLER_THAN));
                         break;
 
                     case '=':
                         if(isText("==")) {
-                            tokens.add(new Token(TokenType.EQUALITY));
+                            tokens.add(new Token(Token.EQUALITY));
                             this.charIndex++;
                         }else
-                            tokens.add(new Token(TokenType.ASSIGN));
+                            tokens.add(new Token(Token.ASSIGN));
 
                         break;
 
                     case '&':
                         if(isText("&&")) {
-                            tokens.add(new Token(TokenType.AND));
+                            tokens.add(new Token(Token.AND));
                             this.charIndex++;
                         }else{
                             pushError("Expected character '&'", this.charIndex+1, 1);
@@ -99,7 +123,7 @@ public class Lexer {
 
                     case '|':
                         if(isText("||")){
-                            tokens.add(new Token(TokenType.OR));
+                            tokens.add(new Token(Token.OR));
                             this.charIndex++;
                         }else{
                             pushError("Expected character '|'", this.charIndex+1, 1);
@@ -118,25 +142,25 @@ public class Lexer {
                         if(Character.isDigit(car)) {
                             result = parseNumber();
                         }else if(isText("true")) {
-                            tokens.add(new Token(TokenType.BOOLEAN_LITERAL, "true"));
+                            tokens.add(new Token(Token.BOOLEAN_LITERAL, "true"));
                             this.charIndex+=3;
                         }else if(isText("false")) {
-                            tokens.add(new Token(TokenType.BOOLEAN_LITERAL, "false"));
+                            tokens.add(new Token(Token.BOOLEAN_LITERAL, "false"));
                             this.charIndex += 4;
                         }else if(isText("int")) {
-                            tokens.add(new Token(TokenType.INT_KW));
+                            tokens.add(new Token(Token.INT_KW));
                             this.charIndex += 2;
                         }else if(isText("float")) {
-                            tokens.add(new Token(TokenType.FLOAT_KW));
+                            tokens.add(new Token(Token.FLOAT_KW));
                             this.charIndex += 4;
                         }else if(isText("string")) {
-                            tokens.add(new Token(TokenType.STRING_KW));
+                            tokens.add(new Token(Token.STRING_KW));
                             this.charIndex += 5;
                         }else if(isText("char")) {
-                            tokens.add(new Token(TokenType.CHAR_KW));
+                            tokens.add(new Token(Token.CHAR_KW));
                             this.charIndex += 3;
                         }else if(isText("bool")){
-                            tokens.add(new Token(TokenType.BOOL_KW));
+                            tokens.add(new Token(Token.BOOL_KW));
                             this.charIndex+=3;
                         }else{
                             result = parseVariableName();
@@ -144,12 +168,15 @@ public class Lexer {
                         break;
                 }
 
+                 */
+
                 if(result != null){
                     if(result.isPresent()){
                         tokens.add(result.get().getToken());
                         this.charIndex+=result.get().getCharsToSkip();
                     }else if(result.isEmpty()){
                         skipLine = true;
+                        pushError("Unknown character", this.charIndex, 1);
                     }
                 }
 
@@ -162,11 +189,34 @@ public class Lexer {
 
 
             this.lineIndex++;
-            tokens.add(new Token(TokenType.END_OF_LINE));
+            tokens.add(Token.END_OF_LINE);
             reading = this.lineIndex < this.lines.length;
         }
 
-        return tokens;
+        return collapse(tokens);
+    }
+
+    public List<Token> collapse(List<Token> tokens){
+        List<Token> collapsed = new ArrayList<>();
+        boolean ignoreNext = false;
+
+        for(int i = 0; i < tokens.size()-1; i++){
+            if(ignoreNext){
+                ignoreNext = false;
+            }else{
+                Token current = tokens.get(i);
+                Token next = tokens.get(i+1);
+
+                if(current.canCollapseFrom(next)) {
+                    collapsed.add(current.getCollapsedForm());
+                    ignoreNext = true;
+                }else
+                    collapsed.add(current);
+            }
+
+        }
+
+        return collapsed;
     }
 
     public List<String> getErrorStack(){
@@ -216,7 +266,8 @@ public class Lexer {
 
         String name = "";
         int offset = 0;
-        while(seekTo(this.charIndex+offset) != ' ' && seekTo(this.charIndex+offset) != Character.LINE_SEPARATOR && seekTo(this.charIndex+offset) != Character.UNASSIGNED){
+        //TODO: Use regex
+        while(Character.isLetterOrDigit(seekTo(this.charIndex+offset)) && seekTo(this.charIndex+offset) != ' ' && seekTo(this.charIndex+offset) != Character.LINE_SEPARATOR && seekTo(this.charIndex+offset) != Character.UNASSIGNED){
             name += seekTo(this.charIndex+offset);
             offset++;
         }
@@ -224,7 +275,7 @@ public class Lexer {
         if(name.isEmpty())
             return Optional.empty();
 
-        LexerSubParsingResult result = new LexerSubParsingResult(new Token(TokenType.VARIABLE_NAME, name), offset);
+        LexerSubParsingResult result = new LexerSubParsingResult(Token.VARIABLE_NAME.with(name), offset-1);
         return Optional.of(result);
     }
 
@@ -263,7 +314,7 @@ public class Lexer {
         }
 
 
-        LexerSubParsingResult result = new LexerSubParsingResult(new Token(TokenType.CHARACTER_LITERAL, value), offset);
+        LexerSubParsingResult result = new LexerSubParsingResult(Token.CHARACTER_LITERAL.with(value), offset);
         return Optional.of(result);
     }
 
@@ -293,7 +344,7 @@ public class Lexer {
             return Optional.empty();
         }
 
-        LexerSubParsingResult result = new LexerSubParsingResult(new Token(TokenType.STRING_LITERAL, string), offset);
+        LexerSubParsingResult result = new LexerSubParsingResult(Token.STRING_LITERAL.with(string), offset);
         return Optional.of(result);
     }
 
@@ -322,13 +373,13 @@ public class Lexer {
 
         }
 
-        TokenType type = null;
+        Token type = null;
         if(isInteger)
-            type = TokenType.INTEGER_LITERAL;
+            type = Token.INTEGER_LITERAL;
         else
-            type = TokenType.FLOAT_LITERAL;
+            type = Token.FLOAT_LITERAL;
 
-        LexerSubParsingResult result = new LexerSubParsingResult(new Token(type, rawValue), offset-1);
+        LexerSubParsingResult result = new LexerSubParsingResult(type.with(rawValue), offset-1);
 
         return Optional.of(result);
     }
