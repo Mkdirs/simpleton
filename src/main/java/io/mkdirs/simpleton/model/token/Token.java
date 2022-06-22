@@ -13,8 +13,8 @@ public final class Token {
             FLOAT_LITERAL = new Token("FLOAT_LITERAL"),
             STRING_LITERAL = new Token("STRING_LITERAL"),
             CHARACTER_LITERAL = new Token("CHARACTER_LITERAL"),
-            BOOLEAN_TRUE_LITERAL = new Token("BOOLEAN_TRUE_LITERAL", "true"),
-            BOOLEAN_FALSE_LITERAL = new Token("BOOLEAN_FALSE_LITERAL", "false"),
+            BOOLEAN_LITERAL = new Token("BOOLEAN_LITERAL"),
+
             VARIABLE_NAME = new Token("VARIABLE"),
 
             PLUS = new Token("PLUS","+"),
@@ -101,6 +101,7 @@ public final class Token {
         return this;
     }
 
+
     public static List<Token> values(){return Token.tokens;}
 
     public Token with(String literal){
@@ -115,6 +116,7 @@ public final class Token {
 
         return other.equals(this.collapseObject);
     }
+
     public Token getCollapsedForm(){return this.collapsedForm;}
 
 

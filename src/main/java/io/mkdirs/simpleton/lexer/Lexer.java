@@ -50,9 +50,16 @@ public class Lexer {
                 if(literalMatch.isPresent()){
                     String literal = literalMatch.get();
                     tokens.add(Token.values().stream().filter(token -> literal.equals(token.getLiteral()) ).findFirst().get());
-                    charIndex+=(literal.length()-1);
-                }else if(Character.isDigit(car)){
+                    if(literal.length() > 1)
+                        charIndex+=(literal.length()-1);
+                }else if(Character.isDigit(car)) {
                     result = parseNumber();
+                }else if(isText("true") || isText("false")) {
+                    result = parseBoolean();
+                }else if(car.equals('\'')) {
+                    result = parseCharacter();
+                }else if(car.equals('\"')){
+                    result = parseString();
                 }else{
                     result = parseVariableName();
                 }
@@ -196,7 +203,7 @@ public class Lexer {
         return collapse(tokens);
     }
 
-    public List<Token> collapse(List<Token> tokens){
+    private List<Token> collapse(List<Token> tokens){
         List<Token> collapsed = new ArrayList<>();
         boolean ignoreNext = false;
 
@@ -262,12 +269,25 @@ public class Lexer {
         pushError(message, charStartIndex, this.lines[this.lineIndex].length()-charStartIndex);
     }
 
+    private Optional<LexerSubParsingResult> parseBoolean(){
+        final String boolean_true = "true";
+        final String boolean_false = "false";
+
+        if(isText(boolean_true))
+            return Optional.of(new LexerSubParsingResult(Token.BOOLEAN_LITERAL.with(boolean_true), boolean_true.length()-1));
+
+        else if(isText(boolean_false))
+            return Optional.of(new LexerSubParsingResult(Token.BOOLEAN_LITERAL.with(boolean_false), boolean_false.length()-1));
+
+        return Optional.empty();
+    }
+
     private Optional<LexerSubParsingResult> parseVariableName(){
 
         String name = "";
         int offset = 0;
         //TODO: Use regex
-        while(Character.isLetterOrDigit(seekTo(this.charIndex+offset)) && seekTo(this.charIndex+offset) != ' ' && seekTo(this.charIndex+offset) != Character.LINE_SEPARATOR && seekTo(this.charIndex+offset) != Character.UNASSIGNED){
+        while(Character.isLetterOrDigit(seekTo(this.charIndex+offset)) && !seekTo(this.charIndex+offset).equals(' ') && !seekTo(this.charIndex+offset).equals(Character.LINE_SEPARATOR) && !seekTo(this.charIndex+offset).equals(Character.UNASSIGNED)){
             name += seekTo(this.charIndex+offset);
             offset++;
         }
@@ -281,7 +301,7 @@ public class Lexer {
 
     private Optional<LexerSubParsingResult> parseCharacter(){
         //Begin
-        if(seekTo(this.charIndex) != '\'') {
+        if(!seekTo(this.charIndex).equals('\'')) {
             pushError("Unexpected error", this.charIndex, 1);
             return Optional.empty();
         }
@@ -289,13 +309,13 @@ public class Lexer {
         int offset = 1;
         String value = "";
         boolean closed = false;
-        while(seekTo(this.charIndex+offset) != '\'' && seekTo(this.charIndex+offset) != Character.LINE_SEPARATOR && seekTo(this.charIndex+offset) != Character.UNASSIGNED){
+        while(!seekTo(this.charIndex+offset).equals('\'') && seekTo(this.charIndex+offset) != Character.LINE_SEPARATOR && seekTo(this.charIndex+offset) != Character.UNASSIGNED){
 
             value += seekTo(this.charIndex+offset);
             offset++;
         }
 
-        if(seekTo(this.charIndex+offset) == '\'')
+        if(seekTo(this.charIndex+offset).equals('\''))
             closed = true;
 
         if(!closed){
@@ -320,7 +340,7 @@ public class Lexer {
 
     private Optional<LexerSubParsingResult> parseString(){
         //Begin
-        if(seekTo(this.charIndex) != '\"') {
+        if(!seekTo(this.charIndex).equals('\"')) {
             pushError("Unexpected error", this.charIndex, 1);
             return Optional.empty();
         }
@@ -329,14 +349,13 @@ public class Lexer {
         int offset = 1;
         String string = "";
 
-        while(seekTo(this.charIndex+offset) != '\"'&& seekTo(this.charIndex+offset) != Character.LINE_SEPARATOR && seekTo(this.charIndex+offset) != Character.UNASSIGNED){
-
+        while(seekTo(this.charIndex+offset) != '\"' && seekTo(this.charIndex+offset) != Character.LINE_SEPARATOR && seekTo(this.charIndex+offset) != Character.UNASSIGNED){
             string += seekTo(this.charIndex+offset);
             offset++;
         }
 
 
-        if(seekTo(this.charIndex+offset) == '\"')
+        if(seekTo(this.charIndex+offset).equals('\"'))
             closed = true;
 
         if(!closed){
@@ -369,9 +388,6 @@ public class Lexer {
             }
         }
 
-        if(!isInteger){
-
-        }
 
         Token type = null;
         if(isInteger)

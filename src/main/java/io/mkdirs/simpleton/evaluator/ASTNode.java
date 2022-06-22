@@ -25,4 +25,6 @@ public class ASTNode {
     public ASTNode getRight() {
         return right;
     }
+
+    public boolean isLeaf(){return this.left == null && this.right == null;}
 }
