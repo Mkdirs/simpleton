@@ -1,68 +1,59 @@
 package io.mkdirs.simpleton.lexer;
 
 import io.mkdirs.simpleton.model.token.Token;
+import io.mkdirs.simpleton.scope.ScopeContext;
 
 import java.util.*;
-import java.util.function.Function;
 
 public class Lexer {
 
-    private String text;
-
-    private String[] lines;
-    private int lineIndex = -1;
+    private final ScopeContext scopeContext;
     private int charIndex = -1;
 
-    private List<String> errorStack = new ArrayList<>();
-
-    public Lexer(String text){
-        this.text = text;
-        this.lines = text.split("\n");
+    public Lexer(ScopeContext scopeContext){
+        this.scopeContext = scopeContext;
     }
 
     public List<Token> parse() {
         List<Token> tokens = new ArrayList<>();
 
-        this.lineIndex = 0;
-        boolean reading = lineIndex < lines.length;
 
-        while(reading){
-            String line = this.lines[lineIndex];
-            char[] chars = line.toCharArray();
-            this.charIndex = 0;
-            boolean skipLine = false;
-            while(this.charIndex < chars.length){
+        char[] chars = this.scopeContext.getLine().toCharArray();
+        this.charIndex = 0;
+        boolean skip = false;
 
-                Optional<LexerSubParsingResult> result = null;
+        while(this.charIndex < chars.length){
 
-                Character car = chars[charIndex];
+            Optional<LexerSubParsingResult> result = null;
 
-                if(Character.isWhitespace(car)){
-                    this.charIndex++;
-                    continue;
-                }
+            Character car = chars[charIndex];
 
-                var literalMatch = Token.values().stream().map(Token::getLiteral)
-                        .filter(Objects::nonNull)
-                        .filter(this::isText)
-                        .findFirst();
+            if(Character.isWhitespace(car)){
+                this.charIndex++;
+                continue;
+            }
 
-                if(literalMatch.isPresent()){
-                    String literal = literalMatch.get();
-                    tokens.add(Token.values().stream().filter(token -> literal.equals(token.getLiteral()) ).findFirst().get());
-                    if(literal.length() > 1)
-                        charIndex+=(literal.length()-1);
-                }else if(Character.isDigit(car)) {
-                    result = parseNumber();
-                }else if(isText("true") || isText("false")) {
-                    result = parseBoolean();
-                }else if(car.equals('\'')) {
-                    result = parseCharacter();
-                }else if(car.equals('\"')){
-                    result = parseString();
-                }else{
-                    result = parseVariableName();
-                }
+            var literalMatch = Token.values().stream().map(Token::getLiteral)
+                    .filter(Objects::nonNull)
+                    .filter(this::isText)
+                    .findFirst();
+
+            if(literalMatch.isPresent()){
+                String literal = literalMatch.get();
+                tokens.add(Token.values().stream().filter(token -> literal.equals(token.getLiteral()) ).findFirst().get());
+                if(literal.length() > 1)
+                    charIndex+=(literal.length()-1);
+            }else if(Character.isDigit(car)) {
+                result = parseNumber();
+            }else if(isText("true") || isText("false")) {
+                result = parseBoolean();
+            }else if(car.equals('\'')) {
+                result = parseCharacter();
+            }else if(car.equals('\"')){
+                result = parseString();
+            }else{
+                result = parseVariableName();
+            }
 
 
 
@@ -177,28 +168,26 @@ public class Lexer {
 
                  */
 
-                if(result != null){
-                    if(result.isPresent()){
-                        tokens.add(result.get().getToken());
-                        this.charIndex+=result.get().getCharsToSkip();
-                    }else if(result.isEmpty()){
-                        skipLine = true;
-                        pushError("Unknown character", this.charIndex, 1);
-                    }
+            if(result != null){
+                if(result.isPresent()){
+                    tokens.add(result.get().getToken());
+                    this.charIndex+=result.get().getCharsToSkip();
+                }else if(result.isEmpty()){
+                    skip = true;
+                    this.scopeContext.pushError("Unknown character", this.charIndex, 1);
+                    //pushError("Unknown character", this.charIndex, 1);
                 }
-
-                if(skipLine)
-                    break;
-
-
-                this.charIndex++;
             }
 
+            if(skip)
+                break;
 
-            this.lineIndex++;
-            tokens.add(Token.END_OF_LINE);
-            reading = this.lineIndex < this.lines.length;
+
+            this.charIndex++;
         }
+
+
+        tokens.add(Token.END_OF_LINE);
 
         return collapse(tokens);
     }
@@ -226,48 +215,44 @@ public class Lexer {
         return collapsed;
     }
 
-    public List<String> getErrorStack(){
-        return this.errorStack;
-    }
 
     private boolean isText(String s){
-        if(this.charIndex+s.length() > this.lines[this.lineIndex].length())
+        if(this.charIndex+s.length() > this.scopeContext.getLine().length())
             return false;
 
-        String extracted = this.lines[this.lineIndex].substring(this.charIndex, this.charIndex+s.length());
+        String extracted = this.scopeContext.getLine().substring(this.charIndex, this.charIndex+s.length());
 
         return extracted.equals(s);
     }
 
 
-    private Character seekTo(int lineIndex, int charIndex){
-        if(lineIndex < 0 || lineIndex >= this.lines.length)
-            return Character.UNASSIGNED;
-        if(charIndex < 0 || charIndex >= this.lines[lineIndex].length())
-            return Character.UNASSIGNED;
-
-        return this.lines[lineIndex].charAt(charIndex);
-    }
-
     private Character seekTo(int charIndex){
-        return seekTo(this.lineIndex, charIndex);
+        if(charIndex < 0 || charIndex >= this.scopeContext.getLine().length())
+            return Character.UNASSIGNED;
+
+        return this.scopeContext.getLine().charAt(charIndex);
     }
 
-    private void pushError(String message, int charStartIndex, int selectionSize){
+
+    /*private void pushError(String message, int charStartIndex, int selectionSize){
         StringBuilder builder = new StringBuilder()
-                .append(message).append(" at line "+(lineIndex+1))
+                .append(message)
                 .append("\n")
-                .append("\t").append(this.lines[lineIndex])
+                .append("\t").append(this.line)
                 .append("\n\t")
                 .append(" ".repeat(charStartIndex)).append("^".repeat(selectionSize));
 
         this.errorStack.add(0, builder.toString());
     }
 
+     */
 
-    private void pushError(String message, int charStartIndex){
-        pushError(message, charStartIndex, this.lines[this.lineIndex].length()-charStartIndex);
+
+    /*private void pushError(String message, int charStartIndex){
+        pushError(message, charStartIndex, this.line.length()-charStartIndex);
     }
+
+     */
 
     private Optional<LexerSubParsingResult> parseBoolean(){
         final String boolean_true = "true";
@@ -302,7 +287,7 @@ public class Lexer {
     private Optional<LexerSubParsingResult> parseCharacter(){
         //Begin
         if(!seekTo(this.charIndex).equals('\'')) {
-            pushError("Unexpected error", this.charIndex, 1);
+            this.scopeContext.pushError("Unexpected error", this.charIndex, 1);
             return Optional.empty();
         }
 
@@ -319,17 +304,17 @@ public class Lexer {
             closed = true;
 
         if(!closed){
-            pushError("Unclosed character literal", this.charIndex+offset, 1);
+            this.scopeContext.pushError("Unclosed character literal", this.charIndex+offset, 1);
             return Optional.empty();
         }
 
         if(value.length() == 0){
-            pushError("Empty character literal", this.charIndex, 2);
+            this.scopeContext.pushError("Empty character literal", this.charIndex, 2);
             return Optional.empty();
         }
 
         if(value.length() > 1){
-            pushError("Too many characters in character literal", this.charIndex, offset+1);
+            this.scopeContext.pushError("Too many characters in character literal", this.charIndex, offset+1);
             return Optional.empty();
         }
 
@@ -341,7 +326,7 @@ public class Lexer {
     private Optional<LexerSubParsingResult> parseString(){
         //Begin
         if(!seekTo(this.charIndex).equals('\"')) {
-            pushError("Unexpected error", this.charIndex, 1);
+            this.scopeContext.pushError("Unexpected error", this.charIndex, 1);
             return Optional.empty();
         }
 
@@ -359,7 +344,7 @@ public class Lexer {
             closed = true;
 
         if(!closed){
-            pushError("Unclosed string literal", this.charIndex+offset, 1);
+            this.scopeContext.pushError("Unclosed string literal", this.charIndex+offset, 1);
             return Optional.empty();
         }
 
@@ -369,7 +354,7 @@ public class Lexer {
 
     private Optional<LexerSubParsingResult> parseNumber(){
         if(!Character.isDigit(seekTo(this.charIndex))){
-            pushError("Unexpected error", this.charIndex, 1);
+            this.scopeContext.pushError("Unexpected error", this.charIndex, 1);
             return Optional.empty();
         }
 

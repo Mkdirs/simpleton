@@ -3,6 +3,7 @@ package io.mkdirs.simpleton.evaluator;
 import io.mkdirs.simpleton.evaluator.operator.Operand;
 import io.mkdirs.simpleton.evaluator.operator.Operator;
 import io.mkdirs.simpleton.model.token.Token;
+import io.mkdirs.simpleton.scope.ScopeContext;
 
 import java.util.*;
 import java.util.stream.Stream;
@@ -253,6 +254,11 @@ public class ExpressionEvaluator {
                     })
     };
 
+    private final ScopeContext scopeContext;
+    public ExpressionEvaluator(ScopeContext scopeContext){
+        this.scopeContext = scopeContext;
+    }
+
     public Optional<Token> evaluate(ASTNode tree){
         if(tree == null)
             return Optional.empty();
@@ -262,7 +268,13 @@ public class ExpressionEvaluator {
 
 
         Token left = evaluate(tree.getLeft()).orElse(null);
+
+        if(Token.VARIABLE_NAME.equals(left))
+            left = this.scopeContext.getVariable(left.getLiteral()).orElse(null);
+
         Token right = evaluate(tree.getRight()).orElse(null);
+        if(Token.VARIABLE_NAME.equals(right))
+            right = this.scopeContext.getVariable(right.getLiteral()).orElse(null);
 
 
         Optional<Operator> operator = getOperator(tree.getToken());
