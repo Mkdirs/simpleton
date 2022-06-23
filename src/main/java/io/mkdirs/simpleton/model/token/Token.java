@@ -9,60 +9,67 @@ public final class Token {
     private static final List<Token> tokens = new ArrayList<>();
 
     public static final Token
-            INTEGER_LITERAL = new Token("INTEGER_LITERAL"),
-            FLOAT_LITERAL = new Token("FLOAT_LITERAL"),
-            STRING_LITERAL = new Token("STRING_LITERAL"),
-            CHARACTER_LITERAL = new Token("CHARACTER_LITERAL"),
-            BOOLEAN_LITERAL = new Token("BOOLEAN_LITERAL"),
+            INTEGER_LITERAL = new Token("INTEGER_LITERAL").add(),
+            FLOAT_LITERAL = new Token("FLOAT_LITERAL").add(),
+            STRING_LITERAL = new Token("STRING_LITERAL").add(),
+            CHARACTER_LITERAL = new Token("CHARACTER_LITERAL").add(),
+            BOOLEAN_LITERAL = new Token("BOOLEAN_LITERAL").add(),
 
-            VARIABLE_NAME = new Token("VARIABLE"),
+            VARIABLE_NAME = new Token("VARIABLE").add(),
 
-            PLUS = new Token("PLUS","+"),
-            MINUS = new Token("MINUS","-"),
-            TIMES = new Token("TIMES","*"),
-            DIVIDE = new Token("DIVIDE","/"),
+            PLUS = new Token("PLUS","+").add(),
+            MINUS = new Token("MINUS","-").add(),
+            TIMES = new Token("TIMES","*").add(),
+            DIVIDE = new Token("DIVIDE","/").add(),
 
 
 
 
             //Composite tokens
-            EQUALITY = new Token("EQUALITY","=="),
+            EQUALITY = new Token("EQUALITY","==").add(),
             EQUALS = new Token("EQUALS","=")
-                    .withSetupCollapse(EQUALITY),
+                    .withSetupCollapse(EQUALITY)
+                    .add(),
 
 
             INEQUALITY = new Token("INEQUALITY","!="),
             NOT = new Token("NOT","!")
-                    .withSetupCollapse(EQUALS, INEQUALITY),
+                    .withSetupCollapse(EQUALS, INEQUALITY)
+                    .add(),
 
 
             GREATER_THAN_EQUALS = new Token("GREATER_THAN_EQUALS", ">="),
             GREATER_THAN = new Token("GREATER_THAN",">")
-                    .withSetupCollapse(EQUALS, GREATER_THAN_EQUALS),
+                    .withSetupCollapse(EQUALS, GREATER_THAN_EQUALS)
+                    .add(),
 
             SMALLER_THAN_EQUALS = new Token("SMALLER_THAN_EQUALS", "<="),
             SMALLER_THAN = new Token("SMALLER_THAN","<")
-                    .withSetupCollapse(EQUALS, SMALLER_THAN_EQUALS),
+                    .withSetupCollapse(EQUALS, SMALLER_THAN_EQUALS)
+                    .add(),
 
 
 
 
 
 
-            AND = new Token("AND","&&"),
-            OR = new Token("OR","||"),
+            AND = new Token("AND","&&").add(),
+            OR = new Token("OR","||").add(),
 
-            LEFT_PARENTHESIS = new Token("LEFT_PARENTHESIS","("),
-            RIGHT_PARENTHESIS = new Token("RIGHT_PARENTHESIS",")"),
+            LEFT_PARENTHESIS = new Token("LEFT_PARENTHESIS","(").add(),
+            RIGHT_PARENTHESIS = new Token("RIGHT_PARENTHESIS",")").add(),
 
             //KW = Key Word
-            INT_KW = new Token("INT_KW","int"),
-            FLOAT_KW = new Token("FLOAT_KW","float"),
-            STRING_KW = new Token("STRING_KW","string"),
-            CHAR_KW = new Token("CHAR_KW","char"),
-            BOOL_KW = new Token("BOOL_KW","bool"),
+            INT_KW = new Token("INT_KW","int").add(),
+            FLOAT_KW = new Token("FLOAT_KW","float").add(),
+            STRING_KW = new Token("STRING_KW","string").add(),
+            CHAR_KW = new Token("CHAR_KW","char").add(),
+            BOOL_KW = new Token("BOOL_KW","bool").add(),
+            NULL_KW = new Token("NULL_KW", "null").add(),
 
-            END_OF_LINE = new Token("END_OF_LINE");
+
+            ANY = new Token("ANY").add(),
+            END_OF_LINE = new Token("END_OF_LINE").add();
 
     private final int id;
     private final String literal;
@@ -74,7 +81,7 @@ public final class Token {
         this.id = id;
         this.name = name;
         this.literal = literal;
-        Token.tokens.add(this);
+        //Token.tokens.add(this);
     }
 
     private Token(String name, String literal){
@@ -91,6 +98,11 @@ public final class Token {
         this.collapseObject = object;
         this.collapsedForm = form;
 
+        return this;
+    }
+
+    private Token add(){
+        Token.tokens.add(this);
         return this;
     }
 

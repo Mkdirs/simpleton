@@ -3,302 +3,75 @@ package io.mkdirs.simpleton.evaluator;
 import io.mkdirs.simpleton.evaluator.operator.Operand;
 import io.mkdirs.simpleton.evaluator.operator.Operator;
 import io.mkdirs.simpleton.model.token.Token;
+import io.mkdirs.simpleton.result.Result;
+import io.mkdirs.simpleton.result.ResultProvider;
 import io.mkdirs.simpleton.scope.ScopeContext;
 
 import java.util.*;
 import java.util.stream.Stream;
 
-public class ExpressionEvaluator {
-    private static final Operator[] OPERATORS = new Operator[]{
-            new Operator(Token.PLUS, 3)
-                    .acceptTypes(Operand.with(Token.INTEGER_LITERAL), Operand.with(Token.INTEGER_LITERAL), (a, b) ->{
+public class ExpressionEvaluator extends ResultProvider {
 
-                        return Token.INTEGER_LITERAL.with(String.valueOf(Integer.parseInt(a.getLiteral()) + Integer.parseInt(b.getLiteral())));
-                    })
-
-                    .acceptTypes(Operand.with(Token.FLOAT_LITERAL), Operand.with(Token.FLOAT_LITERAL), (a, b) ->{
-                        return Token.FLOAT_LITERAL.with(String.valueOf(Float.parseFloat(a.getLiteral()) + Float.parseFloat(b.getLiteral())));
-                    })
-
-                    .acceptTypes(Operand.with(Token.FLOAT_LITERAL), Operand.with(Token.INTEGER_LITERAL), (a, b) ->{
-                        return Token.FLOAT_LITERAL.with(String.valueOf(Float.parseFloat(a.getLiteral()) + Integer.parseInt(b.getLiteral())));
-                    })
-
-                    .acceptTypes(Operand.with(Token.INTEGER_LITERAL), Operand.with(Token.FLOAT_LITERAL), (a, b) ->{
-                        return Token.FLOAT_LITERAL.with(String.valueOf(Integer.parseInt(a.getLiteral()) + Float.parseFloat(b.getLiteral())));
-                    })
-
-                    .acceptTypes(Operand.with(Token.STRING_LITERAL), Operand.with(Token.STRING_LITERAL), (a, b) ->{
-                        return Token.STRING_LITERAL.with(a.getLiteral() + b.getLiteral());
-                    }),
-
-
-
-
-
-
-            new Operator(Token.MINUS, 3)
-                    .acceptTypes(Operand.with(Token.INTEGER_LITERAL), Operand.with(Token.INTEGER_LITERAL), (a, b) -> {
-                        return Token.INTEGER_LITERAL.with(String.valueOf(Integer.parseInt(a.getLiteral()) - Integer.parseInt(b.getLiteral())));
-                    })
-
-                    .acceptTypes(Operand.NOTHING, Operand.with(Token.INTEGER_LITERAL), (__,b) -> {
-                        return Token.INTEGER_LITERAL.with(String.valueOf(-Integer.parseInt(b.getLiteral())));
-                    })
-
-                    .acceptTypes(Operand.with(Token.FLOAT_LITERAL), Operand.with(Token.FLOAT_LITERAL), (a,b) -> {
-                        return Token.FLOAT_LITERAL.with(String.valueOf(Float.parseFloat(a.getLiteral()) - Float.parseFloat(b.getLiteral())));
-                    })
-
-                    .acceptTypes(Operand.with(Token.FLOAT_LITERAL), Operand.with(Token.INTEGER_LITERAL), (a, b) ->{
-                        return Token.FLOAT_LITERAL.with(String.valueOf(Float.parseFloat(a.getLiteral()) - Integer.parseInt(b.getLiteral())));
-                    })
-
-                    .acceptTypes(Operand.with(Token.INTEGER_LITERAL), Operand.with(Token.FLOAT_LITERAL), (a, b) ->{
-                        return Token.FLOAT_LITERAL.with(String.valueOf(Integer.parseInt(a.getLiteral()) - Float.parseFloat(b.getLiteral())));
-                    })
-
-                    .acceptTypes(Operand.NOTHING, Operand.with(Token.FLOAT_LITERAL), (__,b) -> {
-                        return Token.FLOAT_LITERAL.with(String.valueOf(-Float.parseFloat(b.getLiteral())));
-                    }),
-
-
-
-
-
-
-
-            new Operator(Token.TIMES, 4)
-                    .acceptTypes(Operand.with(Token.INTEGER_LITERAL), Operand.with(Token.INTEGER_LITERAL), (a,b) -> {
-                        return Token.INTEGER_LITERAL.with(String.valueOf(Integer.parseInt(a.getLiteral()) * Integer.parseInt(b.getLiteral())));
-                    })
-
-                    .acceptTypes(Operand.with(Token.FLOAT_LITERAL), Operand.with(Token.FLOAT_LITERAL), (a,b) -> {
-                        return Token.FLOAT_LITERAL.with(String.valueOf(Float.parseFloat(a.getLiteral()) * Float.parseFloat(b.getLiteral())));
-                    })
-
-                    .acceptTypes(Operand.with(Token.FLOAT_LITERAL), Operand.with(Token.INTEGER_LITERAL), (a,b) -> {
-                        return Token.FLOAT_LITERAL.with(String.valueOf(Float.parseFloat(a.getLiteral()) * Integer.parseInt(b.getLiteral())));
-                    })
-
-                    .acceptTypes(Operand.with(Token.INTEGER_LITERAL), Operand.with(Token.FLOAT_LITERAL), (a,b) -> {
-                        return Token.FLOAT_LITERAL.with(String.valueOf(Integer.parseInt(a.getLiteral()) * Float.parseFloat(b.getLiteral())));
-                    }),
-
-
-
-
-            new Operator(Token.DIVIDE, 4)
-                    .acceptTypes(Operand.with(Token.INTEGER_LITERAL), Operand.with(Token.INTEGER_LITERAL), (a,b) -> {
-                        return Token.INTEGER_LITERAL.with(String.valueOf(Integer.parseInt(a.getLiteral()) / Integer.parseInt(b.getLiteral())));
-                    })
-
-                    .acceptTypes(Operand.with(Token.FLOAT_LITERAL), Operand.with(Token.FLOAT_LITERAL), (a,b) -> {
-                        return Token.FLOAT_LITERAL.with(String.valueOf(Float.parseFloat(a.getLiteral()) / Float.parseFloat(b.getLiteral())));
-                    })
-
-                    .acceptTypes(Operand.with(Token.INTEGER_LITERAL), Operand.with(Token.FLOAT_LITERAL), (a,b) -> {
-                        return Token.FLOAT_LITERAL.with(String.valueOf(Integer.parseInt(a.getLiteral()) / Float.parseFloat(b.getLiteral())));
-                    })
-
-                    .acceptTypes(Operand.with(Token.FLOAT_LITERAL), Operand.with(Token.INTEGER_LITERAL), (a,b) -> {
-                        return Token.FLOAT_LITERAL.with(String.valueOf(Float.parseFloat(a.getLiteral()) / Integer.parseInt(b.getLiteral())));
-                    }),
-
-
-
-
-
-            new Operator(Token.OR, 3)
-                    .acceptTypes(Operand.with(Token.BOOLEAN_LITERAL), Operand.with(Token.BOOLEAN_LITERAL), (a,b) -> {
-                        return Token.BOOLEAN_LITERAL.with(String.valueOf(Boolean.parseBoolean(a.getLiteral()) || Boolean.parseBoolean(b.getLiteral())));
-                    }),
-
-
-
-
-            new Operator(Token.AND, 4)
-                    .acceptTypes(Operand.with(Token.BOOLEAN_LITERAL), Operand.with(Token.BOOLEAN_LITERAL), (a,b) -> {
-                        return Token.BOOLEAN_LITERAL.with(String.valueOf(Boolean.parseBoolean(a.getLiteral()) && Boolean.parseBoolean(b.getLiteral())));
-                    }),
-
-
-
-
-            new Operator(Token.NOT, 6)
-                    .acceptTypes(Operand.NOTHING, Operand.with(Token.BOOLEAN_LITERAL), (__,b) -> {
-                        return Token.BOOLEAN_LITERAL.with(String.valueOf(!Boolean.parseBoolean(b.getLiteral())));
-                    }),
-
-
-
-
-            new Operator(Token.EQUALITY, 1)
-                    .acceptTypes(Operand.with(Token.BOOLEAN_LITERAL), Operand.with(Token.BOOLEAN_LITERAL), (a,b) -> {
-                        return Token.BOOLEAN_LITERAL.with(String.valueOf(Boolean.parseBoolean(a.getLiteral()) == Boolean.parseBoolean(b.getLiteral())));
-                    })
-
-                    .acceptTypes(Operand.with(Token.INTEGER_LITERAL), Operand.with(Token.INTEGER_LITERAL), (a,b) -> {
-                        return Token.BOOLEAN_LITERAL.with(String.valueOf(Integer.parseInt(a.getLiteral()) == Integer.parseInt(b.getLiteral())));
-                    })
-
-                    .acceptTypes(Operand.with(Token.FLOAT_LITERAL), Operand.with(Token.FLOAT_LITERAL), (a,b) -> {
-                        return Token.BOOLEAN_LITERAL.with(String.valueOf(Float.parseFloat(a.getLiteral()) == Float.parseFloat(b.getLiteral())));
-                    })
-
-                    .acceptTypes(Operand.with(Token.CHARACTER_LITERAL), Operand.with(Token.CHARACTER_LITERAL), (a,b) -> {
-                        return Token.BOOLEAN_LITERAL.with(String.valueOf(a.getLiteral().charAt(0) == b.getLiteral().charAt(0)));
-                    })
-
-                    .acceptTypes(Operand.with(Token.STRING_LITERAL), Operand.with(Token.STRING_LITERAL), (a,b) -> {
-                        return Token.BOOLEAN_LITERAL.with(String.valueOf(a.getLiteral().equals(b.getLiteral())));
-                    }),
-
-
-
-
-
-
-
-            new Operator(Token.INEQUALITY, 1)
-                    .acceptTypes(Operand.with(Token.BOOLEAN_LITERAL), Operand.with(Token.BOOLEAN_LITERAL), (a,b) -> {
-                        return Token.BOOLEAN_LITERAL.with(String.valueOf(Boolean.parseBoolean(a.getLiteral()) != Boolean.parseBoolean(b.getLiteral())));
-                    })
-
-                    .acceptTypes(Operand.with(Token.INTEGER_LITERAL), Operand.with(Token.INTEGER_LITERAL), (a,b) -> {
-                        return Token.BOOLEAN_LITERAL.with(String.valueOf(Integer.parseInt(a.getLiteral()) != Integer.parseInt(b.getLiteral())));
-                    })
-
-                    .acceptTypes(Operand.with(Token.FLOAT_LITERAL), Operand.with(Token.FLOAT_LITERAL), (a,b) -> {
-                        return Token.BOOLEAN_LITERAL.with(String.valueOf(Float.parseFloat(a.getLiteral()) != Float.parseFloat(b.getLiteral())));
-                    })
-
-                    .acceptTypes(Operand.with(Token.CHARACTER_LITERAL), Operand.with(Token.CHARACTER_LITERAL), (a,b) -> {
-                        return Token.BOOLEAN_LITERAL.with(String.valueOf(a.getLiteral().charAt(0) != b.getLiteral().charAt(0)));
-                    })
-
-                    .acceptTypes(Operand.with(Token.STRING_LITERAL), Operand.with(Token.STRING_LITERAL), (a,b) -> {
-                        return Token.BOOLEAN_LITERAL.with(String.valueOf(!a.getLiteral().equals(b.getLiteral())));
-                    }),
-
-
-
-
-
-            new Operator(Token.GREATER_THAN, 5)
-                    .acceptTypes(Operand.with(Token.INTEGER_LITERAL), Operand.with(Token.INTEGER_LITERAL), (a,b) -> {
-                        return Token.BOOLEAN_LITERAL.with(String.valueOf(Integer.parseInt(a.getLiteral()) > Integer.parseInt(b.getLiteral())));
-                    })
-
-                    .acceptTypes(Operand.with(Token.FLOAT_LITERAL), Operand.with(Token.FLOAT_LITERAL), (a,b) -> {
-                        return Token.BOOLEAN_LITERAL.with(String.valueOf(Float.parseFloat(a.getLiteral()) > Float.parseFloat(b.getLiteral())));
-                    })
-
-                    .acceptTypes(Operand.with(Token.CHARACTER_LITERAL), Operand.with(Token.CHARACTER_LITERAL), (a,b) -> {
-                        return Token.BOOLEAN_LITERAL.with(String.valueOf(a.getLiteral().charAt(0) > b.getLiteral().charAt(0)));
-                    }),
-
-
-
-
-
-
-
-            new Operator(Token.GREATER_THAN_EQUALS, 5)
-                    .acceptTypes(Operand.with(Token.INTEGER_LITERAL), Operand.with(Token.INTEGER_LITERAL), (a,b) -> {
-                        return Token.BOOLEAN_LITERAL.with(String.valueOf(Integer.parseInt(a.getLiteral()) >= Integer.parseInt(b.getLiteral())));
-                    })
-
-                    .acceptTypes(Operand.with(Token.FLOAT_LITERAL), Operand.with(Token.FLOAT_LITERAL), (a,b) -> {
-                        return Token.BOOLEAN_LITERAL.with(String.valueOf(Float.parseFloat(a.getLiteral()) >= Float.parseFloat(b.getLiteral())));
-                    })
-
-                    .acceptTypes(Operand.with(Token.CHARACTER_LITERAL), Operand.with(Token.CHARACTER_LITERAL), (a,b) -> {
-                        return Token.BOOLEAN_LITERAL.with(String.valueOf(a.getLiteral().charAt(0) >= b.getLiteral().charAt(0)));
-                    }),
-
-
-
-
-
-            new Operator(Token.SMALLER_THAN, 5)
-                    .acceptTypes(Operand.with(Token.INTEGER_LITERAL), Operand.with(Token.INTEGER_LITERAL), (a,b) -> {
-                        return Token.BOOLEAN_LITERAL.with(String.valueOf(Integer.parseInt(a.getLiteral()) < Integer.parseInt(b.getLiteral())));
-                    })
-
-                    .acceptTypes(Operand.with(Token.FLOAT_LITERAL), Operand.with(Token.FLOAT_LITERAL), (a,b) -> {
-                        return Token.BOOLEAN_LITERAL.with(String.valueOf(Float.parseFloat(a.getLiteral()) < Float.parseFloat(b.getLiteral())));
-                    })
-
-                    .acceptTypes(Operand.with(Token.CHARACTER_LITERAL), Operand.with(Token.CHARACTER_LITERAL), (a,b) -> {
-                        return Token.BOOLEAN_LITERAL.with(String.valueOf(a.getLiteral().charAt(0) < b.getLiteral().charAt(0)));
-                    }),
-
-
-
-
-
-
-
-            new Operator(Token.SMALLER_THAN_EQUALS, 5)
-                    .acceptTypes(Operand.with(Token.INTEGER_LITERAL), Operand.with(Token.INTEGER_LITERAL), (a,b) -> {
-                        return Token.BOOLEAN_LITERAL.with(String.valueOf(Integer.parseInt(a.getLiteral()) <= Integer.parseInt(b.getLiteral())));
-                    })
-
-                    .acceptTypes(Operand.with(Token.FLOAT_LITERAL), Operand.with(Token.FLOAT_LITERAL), (a,b) -> {
-                        return Token.BOOLEAN_LITERAL.with(String.valueOf(Float.parseFloat(a.getLiteral()) <= Float.parseFloat(b.getLiteral())));
-                    })
-
-                    .acceptTypes(Operand.with(Token.CHARACTER_LITERAL), Operand.with(Token.CHARACTER_LITERAL), (a,b) -> {
-                        return Token.BOOLEAN_LITERAL.with(String.valueOf(a.getLiteral().charAt(0) <= b.getLiteral().charAt(0)));
-                    })
-    };
-
-    private final ScopeContext scopeContext;
     public ExpressionEvaluator(ScopeContext scopeContext){
-        this.scopeContext = scopeContext;
+        super(scopeContext);
     }
 
-    public Optional<Token> evaluate(ASTNode tree){
+
+    public Result<Token> evaluate(ASTNode tree){
         if(tree == null)
-            return Optional.empty();
+            return Result.success(null);
 
         if(tree.isLeaf())
-            return Optional.of(tree.getToken());
+            return Result.success(tree.getToken());
 
 
-        Token left = evaluate(tree.getLeft()).orElse(null);
+        Token left = evaluate(tree.getLeft()).get();
+        if(Token.VARIABLE_NAME.equals(left)) {
+            Token var = this.scopeContext.getVariable(left.getLiteral()).orElse(null);
 
-        if(Token.VARIABLE_NAME.equals(left))
-            left = this.scopeContext.getVariable(left.getLiteral()).orElse(null);
+            if(var == null)
+                return pushError("Variable '"+left.getLiteral()+"' does not exist");
+            else
+                left = var;
+        }
 
-        Token right = evaluate(tree.getRight()).orElse(null);
-        if(Token.VARIABLE_NAME.equals(right))
-            right = this.scopeContext.getVariable(right.getLiteral()).orElse(null);
+
+
+        Token right = evaluate(tree.getRight()).get();
+        if(Token.VARIABLE_NAME.equals(right)) {
+            Token var = this.scopeContext.getVariable(right.getLiteral()).orElse(null);
+
+            if(var == null)
+                return pushError("Variable '"+right.getLiteral()+"' does not exist");
+            else
+                right = var;
+        }
+
 
 
         Optional<Operator> operator = getOperator(tree.getToken());
 
         if(operator.isPresent()){
-            return operator.get().evaluate(left, right);
+            Optional<Token> r = operator.get().evaluate(left, right);
+            if(r.isEmpty())
+                return pushError("Unable to apply '"+operator.get().getToken().getLiteral()+"' on '"+left+"' and '"+right+"'");
 
-        }else{
-            //TODO
+            return Result.success(r.get());
         }
 
-        return Optional.empty();
+        return pushError("Unknown operator: \""+tree.getToken().getLiteral()+"\"");
     }
 
     private Optional<Operator> getOperator(Token token){
-        return Arrays.stream(OPERATORS).filter(e  -> e.getToken().equals(token)).findFirst();
+        return Arrays.stream(Operator.OPERATORS).filter(e  -> e.getToken().equals(token)).findFirst();
     }
 
-    public Optional<ASTNode> buildTree(List<Token> tokens){
+    public Result<ASTNode> buildTree(List<Token> tokens){
 
         if(tokens.isEmpty())
-            return Optional.empty();
+            return Result.success(null);
         else if(tokens.size() == 1)
-            return Optional.of(new ASTNode(null, tokens.get(0), null));
+            return Result.success(new ASTNode(null, tokens.get(0), null));
 
         int closingParenthesis = getClosingParenthesis(0, tokens);
 
@@ -308,16 +81,16 @@ public class ExpressionEvaluator {
         int mainOperatorIndex = findMainOperatorIndex(tokens);
 
         if(mainOperatorIndex == -1)
-            return Optional.empty();
+            return pushError("Unexpected error");
 
 
         Token operator = tokens.get(mainOperatorIndex);
-        Optional<ASTNode> left = buildTree(tokens.subList(0, mainOperatorIndex));
-        Optional<ASTNode> right = buildTree(tokens.subList(mainOperatorIndex+1, tokens.size()));
+        Result<ASTNode> left = buildTree(tokens.subList(0, mainOperatorIndex));
+        Result<ASTNode> right = buildTree(tokens.subList(mainOperatorIndex+1, tokens.size()));
 
-        ASTNode tree = new ASTNode(left.orElse(null), operator, right.orElse(null));
+        ASTNode tree = new ASTNode(left.get(), operator, right.get());
 
-        return Optional.of(tree);
+        return Result.success(tree);
     }
 
     private int getClosingParenthesis(int start, List<Token> tokens){
@@ -361,14 +134,14 @@ public class ExpressionEvaluator {
                     currentOperatorParenthesisScope = 1;
             }
 
-            Optional<Operator> operator = Arrays.stream(OPERATORS).filter(e -> e.getToken().equals(token)).findFirst();
+            Optional<Operator> operator = Arrays.stream(Operator.OPERATORS).filter(e -> e.getToken().equals(token)).findFirst();
             if(operator.isPresent()){
                 if(mainOperatorIndex == -1) {
                     mainOperatorIndex = i;
                     mainOperatorParenthesisScope = currentOperatorParenthesisScope;
                 }else{
                     final int main = mainOperatorIndex;
-                    Optional<Operator> mainOperatorOpt = Arrays.stream(OPERATORS).filter(e -> e.getToken().equals(tokens.get(main))).findFirst();
+                    Optional<Operator> mainOperatorOpt = Arrays.stream(Operator.OPERATORS).filter(e -> e.getToken().equals(tokens.get(main))).findFirst();
 
                     if(operator.get().getPriority() + (currentOperatorParenthesisScope*parenthesisFactor) <=  mainOperatorOpt.get().getPriority() + (mainOperatorParenthesisScope*parenthesisFactor)){
                         mainOperatorIndex = i;
