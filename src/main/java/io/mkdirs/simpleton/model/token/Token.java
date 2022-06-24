@@ -26,7 +26,7 @@ public final class Token {
 
 
             //Composite tokens
-            EQUALITY = new Token("EQUALITY","==").add(),
+            EQUALITY = new Token("EQUALITY","=="),
             EQUALS = new Token("EQUALS","=")
                     .withSetupCollapse(EQUALITY)
                     .add(),
@@ -53,22 +53,38 @@ public final class Token {
 
 
 
-            AND = new Token("AND","&&").add(),
-            OR = new Token("OR","||").add(),
+            AND = new Token("AND","&&"),
+            AMPERSAND = new Token("AMPERSAND", "&")
+                    .withSetupCollapse(AND).add(),
+
+            OR = new Token("OR","||"),
+            PIPE = new Token("PIPE", "|")
+                    .withSetupCollapse(OR).add(),
 
             LEFT_PARENTHESIS = new Token("LEFT_PARENTHESIS","(").add(),
             RIGHT_PARENTHESIS = new Token("RIGHT_PARENTHESIS",")").add(),
 
             //KW = Key Word
-            INT_KW = new Token("INT_KW","int").add(),
-            FLOAT_KW = new Token("FLOAT_KW","float").add(),
-            STRING_KW = new Token("STRING_KW","string").add(),
-            CHAR_KW = new Token("CHAR_KW","char").add(),
-            BOOL_KW = new Token("BOOL_KW","bool").add(),
-            NULL_KW = new Token("NULL_KW", "null").add(),
+            INT_KW = new Token("INT_KW","int")
+                    .asTextual()
+                    .add(),
+            FLOAT_KW = new Token("FLOAT_KW","float")
+                    .asTextual()
+                    .add(),
+            STRING_KW = new Token("STRING_KW","string")
+                    .asTextual()
+                    .add(),
+            CHAR_KW = new Token("CHAR_KW","char")
+                    .asTextual()
+                    .add(),
+            BOOL_KW = new Token("BOOL_KW","bool")
+                    .asTextual()
+                    .add(),
+            NULL_KW = new Token("NULL_KW", "null")
+                    .asTextual()
+                    .add(),
 
 
-            ANY = new Token("ANY").add(),
             END_OF_LINE = new Token("END_OF_LINE").add();
 
     private final int id;
@@ -76,6 +92,7 @@ public final class Token {
     private final String name;
     private Token collapseObject;
     private Token collapsedForm;
+    private boolean isTextual = false;
 
     private Token(int id, String name, String literal){
         this.id = id;
@@ -113,6 +130,11 @@ public final class Token {
         return this;
     }
 
+    private Token asTextual(){
+        this.isTextual = true;
+        return this;
+    }
+
 
     public static List<Token> values(){return Token.tokens;}
 
@@ -133,6 +155,10 @@ public final class Token {
 
 
     public boolean hasLiteral(){return this.literal != null;}
+
+    public boolean isTextual() {
+        return isTextual;
+    }
 
     @Override
     public int hashCode() {

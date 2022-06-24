@@ -35,30 +35,47 @@ public class Lexer extends ResultProvider {
             }
 
 
-            var literalMatch = Token.values().stream()
+            var charMatch = Token.values().stream()
+                    .filter(Token::hasLiteral)
+                    .filter(e -> !e.isTextual())
                     .map(Token::getLiteral)
-                    .filter(Objects::nonNull)
-                    .filter(this::isText)
+                    .filter(e -> car.equals(e.charAt(0)))
                     .findFirst();
 
-            if(literalMatch.isPresent()) {
-                String literal = literalMatch.get();
+
+            if(charMatch.isPresent()) {
+                String literal = charMatch.get();
                 tokens.add(Token.values().stream().filter(token -> literal.equals(token.getLiteral())).findFirst().get());
 
                 charIndex += (literal.length());
                 continue;
 
-
-            }else if(Character.isDigit(car)) {
-                result = parseNumber();
-            }else if(isText("true") || isText("false")) {
-                result = parseBoolean();
-            }else if(car.equals('\'')) {
-                result = parseCharacter();
-            }else if(car.equals('\"')){
-                result = parseString();
             }else{
-                result = parseVariableName();
+                var textualMatch = Token.values().stream()
+                        .filter(Token::hasLiteral)
+                        .filter(Token::isTextual)
+                        .map(Token::getLiteral)
+                        .filter(this::isText)
+                        .findFirst();
+
+                if(textualMatch.isPresent()){
+                    String literal = textualMatch.get();
+                    tokens.add(Token.values().stream().filter(token -> literal.equals(token.getLiteral())).findFirst().get());
+
+                    charIndex += (literal.length());
+                    continue;
+
+                }else if(Character.isDigit(car)) {
+                    result = parseNumber();
+                }else if(isText("true") || isText("false")) {
+                    result = parseBoolean();
+                }else if(car.equals('\'')) {
+                    result = parseCharacter();
+                }else if(car.equals('\"')){
+                    result = parseString();
+                }else{
+                    result = parseVariableName();
+                }
             }
 
 
@@ -222,7 +239,26 @@ public class Lexer extends ResultProvider {
         if(this.charIndex+s.length() > this.scopeContext.getLine().length())
             return false;
 
-        String extracted = this.scopeContext.getLine().substring(this.charIndex, this.charIndex+s.length());
+        String extracted = "";
+        int offst = this.charIndex;
+        while(offst < this.scopeContext.getLine().length()){
+            Character c = this.scopeContext.getLine().charAt(offst);
+
+            boolean metToken = Token.values().stream()
+                    .filter(Token::hasLiteral)
+                    .filter(e -> !e.isTextual())
+                    .map(Token::getLiteral)
+                    .anyMatch(e -> c.equals(e.charAt(0)));
+
+            if(Character.isWhitespace(c) || metToken)
+                break;
+
+            extracted+=c;
+
+            offst++;
+        }
+
+        //String extracted = this.scopeContext.getLine().substring(this.charIndex, this.charIndex+s.length());
 
         return extracted.equals(s);
     }
@@ -312,7 +348,11 @@ public class Lexer extends ResultProvider {
             return pushError("Empty character literal", this.charIndex, 2);
         }
 
-        if(value.length() > 1){
+        if(value.length() == 2 && value.startsWith("\\")){
+            System.out.println(value);
+            value = "\\"+value.charAt(1);
+
+        }else if(value.length() > 1){
             return pushError("Too many characters in character literal", this.charIndex, offset+1);
         }
 
