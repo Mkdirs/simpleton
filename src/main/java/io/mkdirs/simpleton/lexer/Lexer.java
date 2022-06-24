@@ -197,7 +197,7 @@ public class Lexer extends ResultProvider {
                     this.charIndex+=result.get().getCharsToSkip();
                     continue;
                 }else{
-                    return pushError("Unexpected error", this.charIndex);
+                    return Result.failure(result.getMessage());
                 }
             }
 
