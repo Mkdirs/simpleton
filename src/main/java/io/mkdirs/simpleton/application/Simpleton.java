@@ -58,17 +58,24 @@ public class Simpleton {
         }
 
         Token result = evaluatorResult.get();
-        if(!expectedType.equals(result) && !Token.NULL_KW.equals(result)) {
+        if(expectedType == null){
+            scope.pushVariable(name, result, result.getLiteral());
+        }else if(!expectedType.equals(result) && !Token.NULL_KW.equals(result)) {
             System.out.println("Expected '"+expectedType+"' but instead got '"+result+"'");
-            return;
+        }else{
+            scope.pushVariable(name, expectedType, result.getLiteral());
         }
 
-        scope.pushVariable(name, result);
     }
+
+    private static void assignVariable(String name, List<Token> tokens){assignVariable(name, tokens, null);}
 
     private static void checkForVariableDeclaration(List<Token> tokens){
 
         Token first = tokens.get(0);
+
+        if(!first.equals(Token.LET_KW))
+            return;
 
         HashMap<Token, Token> types = new HashMap<>();
         types.putAll(Map.ofEntries(
@@ -80,45 +87,53 @@ public class Simpleton {
 
         ));
 
-        if(!types.containsKey(first)){
-            return;
-        }
+        boolean assign = false;
+        boolean inferType = false;
+        Token type = null;
+        if(tokens.size() >= 4 && tokens.subList(0, 3).equals(Arrays.asList(Token.LET_KW, Token.VARIABLE_NAME, Token.COLON))){
+            if(!types.containsKey(tokens.get(3))){
+                System.out.println("Unknown type '"+tokens.get(3)+"'");
+                return;
+            }
+
+            type = types.get(tokens.get(3));
+
+            if(tokens.size() > 5 && Token.EQUALS.equals(tokens.get(4))){
+                assign = true;
+            }else if(tokens.size() == 5 && Token.EQUALS.equals(tokens.get(4))){
+                System.out.println("Expected an expression");
+                return;
+            }else if(tokens.size() >= 5 && !Token.EQUALS.equals(tokens.get(4))){
+                System.out.println("Expected '"+Token.EQUALS+"' instead got '"+tokens.get(4)+"'");
+                return;
+            }
 
 
-        if(!(tokens.size() > 1)){
-            System.out.println("Expected a variable declaration");
+        }else if(tokens.size() >= 4 && tokens.subList(0, 3).equals(Arrays.asList(Token.LET_KW, Token.VARIABLE_NAME, Token.EQUALS))){
+            assign = true;
+            inferType = true;
+        }else{
+            System.out.println("Unexpected error !");
             return;
         }
 
         Token name = tokens.get(1);
-
-        if(!Token.VARIABLE_NAME.equals(name)) {
-            System.out.println("Expected a valid variable name");
-            return;
-        }
 
         if(scope.getVariable(name.getLiteral()).isPresent()){
             System.out.println("Variable '"+name.getLiteral()+"' already exists");
             return;
         }
 
-        if(tokens.size() == 2)
-            scope.pushVariable(name.getLiteral());
-        else{
-
-            if(!Token.EQUALS.equals(tokens.get(2))) {
-                System.out.println("Expected '='");
-                return;
-            }
-
-            if(tokens.size() == 3){
-                System.out.println("Expected an expression");
-                return;
-            }
-
-           Token expectedType = types.get(first);
-            assignVariable(name.getLiteral(), tokens.subList(3, tokens.size()), expectedType);
+        if(!assign){
+            scope.pushVariable(name.getLiteral(), type);
+        }else if(!inferType){
+            assignVariable(name.getLiteral(), tokens.subList(5,tokens.size()), type);
+        }else{
+            assignVariable(name.getLiteral(), tokens.subList(3, tokens.size()));
         }
+
+
+
 
         System.out.println("'"+name.getLiteral()+"' = '"+scope.getVariable(name.getLiteral()).get().getLiteral()+"'");
     }

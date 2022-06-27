@@ -51,8 +51,6 @@ public final class Token {
 
 
 
-
-
             AND = new Token("AND","&&"),
             AMPERSAND = new Token("AMPERSAND", "&")
                     .withSetupCollapse(AND).add(),
@@ -61,10 +59,27 @@ public final class Token {
             PIPE = new Token("PIPE", "|")
                     .withSetupCollapse(OR).add(),
 
+
+
+
+
+
+
+
             LEFT_PARENTHESIS = new Token("LEFT_PARENTHESIS","(").add(),
             RIGHT_PARENTHESIS = new Token("RIGHT_PARENTHESIS",")").add(),
+            COLON = new Token("COLON", ":").add(),
+
+
+
+
+
+
 
             //KW = Key Word
+            LET_KW = new Token("LET_KW", "let")
+                    .asTextual()
+                    .add(),
             INT_KW = new Token("INT_KW","int")
                     .asTextual()
                     .add(),

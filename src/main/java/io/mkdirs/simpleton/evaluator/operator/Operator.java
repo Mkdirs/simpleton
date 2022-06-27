@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 public class Operator {
-
+    //TODO: add null handling
     public static final Operator[] OPERATORS = new Operator[]{
             new Operator(Token.PLUS, 3)
                     .acceptTypes(Operand.with(Token.INTEGER_LITERAL), Operand.with(Token.INTEGER_LITERAL), (a, b) ->{
@@ -256,6 +256,7 @@ public class Operator {
     private final Token token;
     private final int priority;
     private final List<Context> contexts = new ArrayList<>();
+    private static final String NULL = Token.NULL_KW.getLiteral();
 
     public Operator(Token token, int priority){
         this.token = token;
@@ -271,7 +272,7 @@ public class Operator {
     }
 
 
-    public Operator acceptTypes(Operand left, Operand right, IOperator handler){
+    private Operator acceptTypes(Operand left, Operand right, IOperator handler){
         this.contexts.add(new Context(left, right, handler));
         return this;
     }

@@ -28,12 +28,12 @@ public class ScopeContext {
     }
 
 
-    public void pushVariable(String name, Token value){
-        this.variables.put(name, value);
+    public void pushVariable(String name, Token type, String value){
+        this.variables.put(name, type.with(value));
     }
 
-    public void pushVariable(String name){
-        this.variables.put(name, Token.NULL_KW);
+    public void pushVariable(String name, Token type){
+        pushVariable(name, type, Token.NULL_KW.getLiteral());
     }
 
     public Optional<Token> getVariable(String name){
