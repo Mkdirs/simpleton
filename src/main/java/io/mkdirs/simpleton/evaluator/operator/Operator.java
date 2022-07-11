@@ -1,6 +1,10 @@
 package io.mkdirs.simpleton.evaluator.operator;
 
 import io.mkdirs.simpleton.model.token.Token;
+import io.mkdirs.simpleton.model.token.literal.BooleanLiteral;
+import io.mkdirs.simpleton.model.token.literal.FloatLiteral;
+import io.mkdirs.simpleton.model.token.literal.IntegerLiteral;
+import io.mkdirs.simpleton.model.token.literal.StringLiteral;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,23 +16,23 @@ public class Operator {
             new Operator(Token.PLUS, 3)
                     .acceptTypes(Operand.with(Token.INTEGER_LITERAL), Operand.with(Token.INTEGER_LITERAL), (a, b) ->{
 
-                        return Token.INTEGER_LITERAL.with(String.valueOf(Integer.parseInt(a.getLiteral()) + Integer.parseInt(b.getLiteral())));
+                        return new IntegerLiteral(String.valueOf(Integer.parseInt(a.getLiteral()) + Integer.parseInt(b.getLiteral())));
                     })
 
                     .acceptTypes(Operand.with(Token.FLOAT_LITERAL), Operand.with(Token.FLOAT_LITERAL), (a, b) ->{
-                        return Token.FLOAT_LITERAL.with(String.valueOf(Float.parseFloat(a.getLiteral()) + Float.parseFloat(b.getLiteral())));
+                        return new FloatLiteral(String.valueOf(Float.parseFloat(a.getLiteral()) + Float.parseFloat(b.getLiteral())));
                     })
 
                     .acceptTypes(Operand.with(Token.FLOAT_LITERAL), Operand.with(Token.INTEGER_LITERAL), (a, b) ->{
-                        return Token.FLOAT_LITERAL.with(String.valueOf(Float.parseFloat(a.getLiteral()) + Integer.parseInt(b.getLiteral())));
+                        return new FloatLiteral(String.valueOf(Float.parseFloat(a.getLiteral()) + Integer.parseInt(b.getLiteral())));
                     })
 
                     .acceptTypes(Operand.with(Token.INTEGER_LITERAL), Operand.with(Token.FLOAT_LITERAL), (a, b) ->{
-                        return Token.FLOAT_LITERAL.with(String.valueOf(Integer.parseInt(a.getLiteral()) + Float.parseFloat(b.getLiteral())));
+                        return new FloatLiteral(String.valueOf(Integer.parseInt(a.getLiteral()) + Float.parseFloat(b.getLiteral())));
                     })
 
                     .acceptTypes(Operand.with(Token.STRING_LITERAL), Operand.with(Token.STRING_LITERAL), (a, b) ->{
-                return Token.STRING_LITERAL.with(a.getLiteral() + b.getLiteral());
+                        return new StringLiteral(a.getLiteral() + b.getLiteral());
             }),
 
 
@@ -38,27 +42,27 @@ public class Operator {
 
             new Operator(Token.MINUS, 3)
                     .acceptTypes(Operand.with(Token.INTEGER_LITERAL), Operand.with(Token.INTEGER_LITERAL), (a, b) -> {
-                        return Token.INTEGER_LITERAL.with(String.valueOf(Integer.parseInt(a.getLiteral()) - Integer.parseInt(b.getLiteral())));
+                        return new IntegerLiteral(String.valueOf(Integer.parseInt(a.getLiteral()) - Integer.parseInt(b.getLiteral())));
                     })
 
                     .acceptTypes(Operand.NOTHING, Operand.with(Token.INTEGER_LITERAL), (__,b) -> {
-                        return Token.INTEGER_LITERAL.with(String.valueOf(-Integer.parseInt(b.getLiteral())));
+                        return new IntegerLiteral(String.valueOf(-Integer.parseInt(b.getLiteral())));
                     })
 
                     .acceptTypes(Operand.with(Token.FLOAT_LITERAL), Operand.with(Token.FLOAT_LITERAL), (a,b) -> {
-                        return Token.FLOAT_LITERAL.with(String.valueOf(Float.parseFloat(a.getLiteral()) - Float.parseFloat(b.getLiteral())));
+                        return new FloatLiteral(String.valueOf(Float.parseFloat(a.getLiteral()) - Float.parseFloat(b.getLiteral())));
                     })
 
                     .acceptTypes(Operand.with(Token.FLOAT_LITERAL), Operand.with(Token.INTEGER_LITERAL), (a, b) ->{
-                        return Token.FLOAT_LITERAL.with(String.valueOf(Float.parseFloat(a.getLiteral()) - Integer.parseInt(b.getLiteral())));
+                        return new FloatLiteral(String.valueOf(Float.parseFloat(a.getLiteral()) - Integer.parseInt(b.getLiteral())));
                     })
 
                     .acceptTypes(Operand.with(Token.INTEGER_LITERAL), Operand.with(Token.FLOAT_LITERAL), (a, b) ->{
-                        return Token.FLOAT_LITERAL.with(String.valueOf(Integer.parseInt(a.getLiteral()) - Float.parseFloat(b.getLiteral())));
+                        return new FloatLiteral(String.valueOf(Integer.parseInt(a.getLiteral()) - Float.parseFloat(b.getLiteral())));
                     })
 
                     .acceptTypes(Operand.NOTHING, Operand.with(Token.FLOAT_LITERAL), (__,b) -> {
-                return Token.FLOAT_LITERAL.with(String.valueOf(-Float.parseFloat(b.getLiteral())));
+                        return new FloatLiteral(String.valueOf(-Float.parseFloat(b.getLiteral())));
             }),
 
 
@@ -67,21 +71,21 @@ public class Operator {
 
 
 
-            new Operator(Token.TIMES, 4)
+            new Operator(Token.STAR, 4)
                     .acceptTypes(Operand.with(Token.INTEGER_LITERAL), Operand.with(Token.INTEGER_LITERAL), (a,b) -> {
-                        return Token.INTEGER_LITERAL.with(String.valueOf(Integer.parseInt(a.getLiteral()) * Integer.parseInt(b.getLiteral())));
+                        return new IntegerLiteral(String.valueOf(Integer.parseInt(a.getLiteral()) * Integer.parseInt(b.getLiteral())));
                     })
 
                     .acceptTypes(Operand.with(Token.FLOAT_LITERAL), Operand.with(Token.FLOAT_LITERAL), (a,b) -> {
-                        return Token.FLOAT_LITERAL.with(String.valueOf(Float.parseFloat(a.getLiteral()) * Float.parseFloat(b.getLiteral())));
+                        return new FloatLiteral(String.valueOf(Float.parseFloat(a.getLiteral()) * Float.parseFloat(b.getLiteral())));
                     })
 
                     .acceptTypes(Operand.with(Token.FLOAT_LITERAL), Operand.with(Token.INTEGER_LITERAL), (a,b) -> {
-                        return Token.FLOAT_LITERAL.with(String.valueOf(Float.parseFloat(a.getLiteral()) * Integer.parseInt(b.getLiteral())));
+                        return new FloatLiteral(String.valueOf(Float.parseFloat(a.getLiteral()) * Integer.parseInt(b.getLiteral())));
                     })
 
                     .acceptTypes(Operand.with(Token.INTEGER_LITERAL), Operand.with(Token.FLOAT_LITERAL), (a,b) -> {
-                return Token.FLOAT_LITERAL.with(String.valueOf(Integer.parseInt(a.getLiteral()) * Float.parseFloat(b.getLiteral())));
+                        return new FloatLiteral(String.valueOf(Integer.parseInt(a.getLiteral()) * Float.parseFloat(b.getLiteral())));
             }),
 
 
@@ -89,19 +93,19 @@ public class Operator {
 
             new Operator(Token.DIVIDE, 4)
                     .acceptTypes(Operand.with(Token.INTEGER_LITERAL), Operand.with(Token.INTEGER_LITERAL), (a,b) -> {
-                        return Token.INTEGER_LITERAL.with(String.valueOf(Integer.parseInt(a.getLiteral()) / Integer.parseInt(b.getLiteral())));
+                        return new IntegerLiteral(String.valueOf(Integer.parseInt(a.getLiteral()) / Integer.parseInt(b.getLiteral())));
                     })
 
                     .acceptTypes(Operand.with(Token.FLOAT_LITERAL), Operand.with(Token.FLOAT_LITERAL), (a,b) -> {
-                        return Token.FLOAT_LITERAL.with(String.valueOf(Float.parseFloat(a.getLiteral()) / Float.parseFloat(b.getLiteral())));
+                        return new FloatLiteral(String.valueOf(Float.parseFloat(a.getLiteral()) / Float.parseFloat(b.getLiteral())));
                     })
 
                     .acceptTypes(Operand.with(Token.INTEGER_LITERAL), Operand.with(Token.FLOAT_LITERAL), (a,b) -> {
-                        return Token.FLOAT_LITERAL.with(String.valueOf(Integer.parseInt(a.getLiteral()) / Float.parseFloat(b.getLiteral())));
+                        return new FloatLiteral(String.valueOf(Integer.parseInt(a.getLiteral()) / Float.parseFloat(b.getLiteral())));
                     })
 
                     .acceptTypes(Operand.with(Token.FLOAT_LITERAL), Operand.with(Token.INTEGER_LITERAL), (a,b) -> {
-                return Token.FLOAT_LITERAL.with(String.valueOf(Float.parseFloat(a.getLiteral()) / Integer.parseInt(b.getLiteral())));
+                        return new FloatLiteral(String.valueOf(Float.parseFloat(a.getLiteral()) / Integer.parseInt(b.getLiteral())));
             }),
 
 
@@ -110,7 +114,7 @@ public class Operator {
 
             new Operator(Token.OR, 3)
                     .acceptTypes(Operand.with(Token.BOOLEAN_LITERAL), Operand.with(Token.BOOLEAN_LITERAL), (a,b) -> {
-                return Token.BOOLEAN_LITERAL.with(String.valueOf(Boolean.parseBoolean(a.getLiteral()) || Boolean.parseBoolean(b.getLiteral())));
+                        return new BooleanLiteral(String.valueOf(Boolean.parseBoolean(a.getLiteral()) || Boolean.parseBoolean(b.getLiteral())));
             }),
 
 
@@ -118,7 +122,7 @@ public class Operator {
 
             new Operator(Token.AND, 4)
                     .acceptTypes(Operand.with(Token.BOOLEAN_LITERAL), Operand.with(Token.BOOLEAN_LITERAL), (a,b) -> {
-                return Token.BOOLEAN_LITERAL.with(String.valueOf(Boolean.parseBoolean(a.getLiteral()) && Boolean.parseBoolean(b.getLiteral())));
+                        return new BooleanLiteral(String.valueOf(Boolean.parseBoolean(a.getLiteral()) && Boolean.parseBoolean(b.getLiteral())));
             }),
 
 
@@ -126,7 +130,7 @@ public class Operator {
 
             new Operator(Token.NOT, 6)
                     .acceptTypes(Operand.NOTHING, Operand.with(Token.BOOLEAN_LITERAL), (__,b) -> {
-                return Token.BOOLEAN_LITERAL.with(String.valueOf(!Boolean.parseBoolean(b.getLiteral())));
+                        return new BooleanLiteral(String.valueOf(!Boolean.parseBoolean(b.getLiteral())));
             }),
 
 
@@ -134,23 +138,23 @@ public class Operator {
 
             new Operator(Token.EQUALITY, 1)
                     .acceptTypes(Operand.with(Token.BOOLEAN_LITERAL), Operand.with(Token.BOOLEAN_LITERAL), (a,b) -> {
-                        return Token.BOOLEAN_LITERAL.with(String.valueOf(Boolean.parseBoolean(a.getLiteral()) == Boolean.parseBoolean(b.getLiteral())));
+                        return new BooleanLiteral(String.valueOf(Boolean.parseBoolean(a.getLiteral()) == Boolean.parseBoolean(b.getLiteral())));
                     })
 
                     .acceptTypes(Operand.with(Token.INTEGER_LITERAL), Operand.with(Token.INTEGER_LITERAL), (a,b) -> {
-                        return Token.BOOLEAN_LITERAL.with(String.valueOf(Integer.parseInt(a.getLiteral()) == Integer.parseInt(b.getLiteral())));
+                        return new BooleanLiteral(String.valueOf(Integer.parseInt(a.getLiteral()) == Integer.parseInt(b.getLiteral())));
                     })
 
                     .acceptTypes(Operand.with(Token.FLOAT_LITERAL), Operand.with(Token.FLOAT_LITERAL), (a,b) -> {
-                        return Token.BOOLEAN_LITERAL.with(String.valueOf(Float.parseFloat(a.getLiteral()) == Float.parseFloat(b.getLiteral())));
+                        return new BooleanLiteral(String.valueOf(Float.parseFloat(a.getLiteral()) == Float.parseFloat(b.getLiteral())));
                     })
 
                     .acceptTypes(Operand.with(Token.CHARACTER_LITERAL), Operand.with(Token.CHARACTER_LITERAL), (a,b) -> {
-                        return Token.BOOLEAN_LITERAL.with(String.valueOf(a.getLiteral().charAt(0) == b.getLiteral().charAt(0)));
+                        return new BooleanLiteral(String.valueOf(a.getLiteral().charAt(0) == b.getLiteral().charAt(0)));
                     })
 
                     .acceptTypes(Operand.with(Token.STRING_LITERAL), Operand.with(Token.STRING_LITERAL), (a,b) -> {
-                return Token.BOOLEAN_LITERAL.with(String.valueOf(a.getLiteral().equals(b.getLiteral())));
+                        return new BooleanLiteral(String.valueOf(a.getLiteral().equals(b.getLiteral())));
             }),
 
 
@@ -161,23 +165,23 @@ public class Operator {
 
             new Operator(Token.INEQUALITY, 1)
                     .acceptTypes(Operand.with(Token.BOOLEAN_LITERAL), Operand.with(Token.BOOLEAN_LITERAL), (a,b) -> {
-                        return Token.BOOLEAN_LITERAL.with(String.valueOf(Boolean.parseBoolean(a.getLiteral()) != Boolean.parseBoolean(b.getLiteral())));
+                        return new BooleanLiteral(String.valueOf(Boolean.parseBoolean(a.getLiteral()) != Boolean.parseBoolean(b.getLiteral())));
                     })
 
                     .acceptTypes(Operand.with(Token.INTEGER_LITERAL), Operand.with(Token.INTEGER_LITERAL), (a,b) -> {
-                        return Token.BOOLEAN_LITERAL.with(String.valueOf(Integer.parseInt(a.getLiteral()) != Integer.parseInt(b.getLiteral())));
+                        return new BooleanLiteral(String.valueOf(Integer.parseInt(a.getLiteral()) != Integer.parseInt(b.getLiteral())));
                     })
 
                     .acceptTypes(Operand.with(Token.FLOAT_LITERAL), Operand.with(Token.FLOAT_LITERAL), (a,b) -> {
-                        return Token.BOOLEAN_LITERAL.with(String.valueOf(Float.parseFloat(a.getLiteral()) != Float.parseFloat(b.getLiteral())));
+                        return new BooleanLiteral(String.valueOf(Float.parseFloat(a.getLiteral()) != Float.parseFloat(b.getLiteral())));
                     })
 
                     .acceptTypes(Operand.with(Token.CHARACTER_LITERAL), Operand.with(Token.CHARACTER_LITERAL), (a,b) -> {
-                        return Token.BOOLEAN_LITERAL.with(String.valueOf(a.getLiteral().charAt(0) != b.getLiteral().charAt(0)));
+                        return new BooleanLiteral(String.valueOf(a.getLiteral().charAt(0) != b.getLiteral().charAt(0)));
                     })
 
                     .acceptTypes(Operand.with(Token.STRING_LITERAL), Operand.with(Token.STRING_LITERAL), (a,b) -> {
-                return Token.BOOLEAN_LITERAL.with(String.valueOf(!a.getLiteral().equals(b.getLiteral())));
+                        return new BooleanLiteral(String.valueOf(!a.getLiteral().equals(b.getLiteral())));
             }),
 
 
@@ -186,15 +190,15 @@ public class Operator {
 
             new Operator(Token.GREATER_THAN, 5)
                     .acceptTypes(Operand.with(Token.INTEGER_LITERAL), Operand.with(Token.INTEGER_LITERAL), (a,b) -> {
-                        return Token.BOOLEAN_LITERAL.with(String.valueOf(Integer.parseInt(a.getLiteral()) > Integer.parseInt(b.getLiteral())));
+                        return new BooleanLiteral(String.valueOf(Integer.parseInt(a.getLiteral()) > Integer.parseInt(b.getLiteral())));
                     })
 
                     .acceptTypes(Operand.with(Token.FLOAT_LITERAL), Operand.with(Token.FLOAT_LITERAL), (a,b) -> {
-                        return Token.BOOLEAN_LITERAL.with(String.valueOf(Float.parseFloat(a.getLiteral()) > Float.parseFloat(b.getLiteral())));
+                        return new BooleanLiteral(String.valueOf(Float.parseFloat(a.getLiteral()) > Float.parseFloat(b.getLiteral())));
                     })
 
                     .acceptTypes(Operand.with(Token.CHARACTER_LITERAL), Operand.with(Token.CHARACTER_LITERAL), (a,b) -> {
-                return Token.BOOLEAN_LITERAL.with(String.valueOf(a.getLiteral().charAt(0) > b.getLiteral().charAt(0)));
+                        return new BooleanLiteral(String.valueOf(a.getLiteral().charAt(0) > b.getLiteral().charAt(0)));
             }),
 
 
@@ -205,32 +209,32 @@ public class Operator {
 
             new Operator(Token.GREATER_THAN_EQUALS, 5)
                     .acceptTypes(Operand.with(Token.INTEGER_LITERAL), Operand.with(Token.INTEGER_LITERAL), (a,b) -> {
-                        return Token.BOOLEAN_LITERAL.with(String.valueOf(Integer.parseInt(a.getLiteral()) >= Integer.parseInt(b.getLiteral())));
+                        return new BooleanLiteral(String.valueOf(Integer.parseInt(a.getLiteral()) >= Integer.parseInt(b.getLiteral())));
                     })
 
                     .acceptTypes(Operand.with(Token.FLOAT_LITERAL), Operand.with(Token.FLOAT_LITERAL), (a,b) -> {
-                        return Token.BOOLEAN_LITERAL.with(String.valueOf(Float.parseFloat(a.getLiteral()) >= Float.parseFloat(b.getLiteral())));
+                        return new BooleanLiteral(String.valueOf(Float.parseFloat(a.getLiteral()) >= Float.parseFloat(b.getLiteral())));
                     })
 
                     .acceptTypes(Operand.with(Token.CHARACTER_LITERAL), Operand.with(Token.CHARACTER_LITERAL), (a,b) -> {
-                return Token.BOOLEAN_LITERAL.with(String.valueOf(a.getLiteral().charAt(0) >= b.getLiteral().charAt(0)));
+                        return new BooleanLiteral(String.valueOf(a.getLiteral().charAt(0) >= b.getLiteral().charAt(0)));
             }),
 
 
 
 
 
-            new Operator(Token.SMALLER_THAN, 5)
+            new Operator(Token.LOWER_THAN, 5)
                     .acceptTypes(Operand.with(Token.INTEGER_LITERAL), Operand.with(Token.INTEGER_LITERAL), (a,b) -> {
-                        return Token.BOOLEAN_LITERAL.with(String.valueOf(Integer.parseInt(a.getLiteral()) < Integer.parseInt(b.getLiteral())));
+                        return new BooleanLiteral(String.valueOf(Integer.parseInt(a.getLiteral()) < Integer.parseInt(b.getLiteral())));
                     })
 
                     .acceptTypes(Operand.with(Token.FLOAT_LITERAL), Operand.with(Token.FLOAT_LITERAL), (a,b) -> {
-                        return Token.BOOLEAN_LITERAL.with(String.valueOf(Float.parseFloat(a.getLiteral()) < Float.parseFloat(b.getLiteral())));
+                        return new BooleanLiteral(String.valueOf(Float.parseFloat(a.getLiteral()) < Float.parseFloat(b.getLiteral())));
                     })
 
                     .acceptTypes(Operand.with(Token.CHARACTER_LITERAL), Operand.with(Token.CHARACTER_LITERAL), (a,b) -> {
-                return Token.BOOLEAN_LITERAL.with(String.valueOf(a.getLiteral().charAt(0) < b.getLiteral().charAt(0)));
+                        return new BooleanLiteral(String.valueOf(a.getLiteral().charAt(0) < b.getLiteral().charAt(0)));
             }),
 
 
@@ -239,17 +243,17 @@ public class Operator {
 
 
 
-            new Operator(Token.SMALLER_THAN_EQUALS, 5)
+            new Operator(Token.LOWER_THAN_EQUALS, 5)
                     .acceptTypes(Operand.with(Token.INTEGER_LITERAL), Operand.with(Token.INTEGER_LITERAL), (a,b) -> {
-                        return Token.BOOLEAN_LITERAL.with(String.valueOf(Integer.parseInt(a.getLiteral()) <= Integer.parseInt(b.getLiteral())));
+                        return new BooleanLiteral(String.valueOf(Integer.parseInt(a.getLiteral()) <= Integer.parseInt(b.getLiteral())));
                     })
 
                     .acceptTypes(Operand.with(Token.FLOAT_LITERAL), Operand.with(Token.FLOAT_LITERAL), (a,b) -> {
-                        return Token.BOOLEAN_LITERAL.with(String.valueOf(Float.parseFloat(a.getLiteral()) <= Float.parseFloat(b.getLiteral())));
+                        return new BooleanLiteral(String.valueOf(Float.parseFloat(a.getLiteral()) <= Float.parseFloat(b.getLiteral())));
                     })
 
                     .acceptTypes(Operand.with(Token.CHARACTER_LITERAL), Operand.with(Token.CHARACTER_LITERAL), (a,b) -> {
-                return Token.BOOLEAN_LITERAL.with(String.valueOf(a.getLiteral().charAt(0) <= b.getLiteral().charAt(0)));
+                        return new BooleanLiteral(String.valueOf(a.getLiteral().charAt(0) <= b.getLiteral().charAt(0)));
             })
     };
 

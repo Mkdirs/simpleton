@@ -6,6 +6,7 @@ import io.mkdirs.simpleton.model.token.Token;
 import io.mkdirs.simpleton.result.Result;
 import io.mkdirs.simpleton.result.ResultProvider;
 import io.mkdirs.simpleton.scope.ScopeContext;
+import io.mkdirs.simpleton.scope.VariableHolder;
 
 import java.util.*;
 import java.util.stream.Stream;
@@ -27,24 +28,24 @@ public class ExpressionEvaluator extends ResultProvider {
 
         Token left = evaluate(tree.getLeft()).get();
         if(Token.VARIABLE_NAME.equals(left)) {
-            Token var = this.scopeContext.getVariable(left.getLiteral()).orElse(null);
+            VariableHolder var = this.scopeContext.getVariable(left.getLiteral()).orElse(null);
 
             if(var == null)
                 return pushError("Variable '"+left.getLiteral()+"' does not exist");
             else
-                left = var;
+                left = var.getValue();
         }
 
 
 
         Token right = evaluate(tree.getRight()).get();
         if(Token.VARIABLE_NAME.equals(right)) {
-            Token var = this.scopeContext.getVariable(right.getLiteral()).orElse(null);
+            VariableHolder var = this.scopeContext.getVariable(right.getLiteral()).orElse(null);
 
             if(var == null)
                 return pushError("Variable '"+right.getLiteral()+"' does not exist");
             else
-                right = var;
+                right = var.getValue();
         }
 
 
@@ -94,7 +95,7 @@ public class ExpressionEvaluator extends ResultProvider {
     }
 
     private int getClosingParenthesis(int start, List<Token> tokens){
-        if(!Token.LEFT_PARENTHESIS.equals(tokens.get(start)))
+        if(!Token.L_PAREN.equals(tokens.get(start)))
             return -1;
 
         int openParenthesis = 1;
@@ -102,9 +103,9 @@ public class ExpressionEvaluator extends ResultProvider {
         while(i < tokens.size() && openParenthesis > 0){
             Token t = tokens.get(i);
 
-            if(Token.LEFT_PARENTHESIS.equals(t))
+            if(Token.L_PAREN.equals(t))
                 openParenthesis++;
-            else if(Token.RIGHT_PARENTHESIS.equals(t))
+            else if(Token.R_PAREN.equals(t))
                 openParenthesis--;
 
             i++;
@@ -125,9 +126,9 @@ public class ExpressionEvaluator extends ResultProvider {
         for(int i = 0; i < tokens.size(); i++){
             Token token = tokens.get(i);
 
-            if(token.equals(Token.LEFT_PARENTHESIS)) {
+            if(token.equals(Token.L_PAREN)) {
                 currentOperatorParenthesisScope++;
-            }else if(token.equals(Token.RIGHT_PARENTHESIS)){
+            }else if(token.equals(Token.R_PAREN)){
                 currentOperatorParenthesisScope--;
 
                 if(currentOperatorParenthesisScope < 1)

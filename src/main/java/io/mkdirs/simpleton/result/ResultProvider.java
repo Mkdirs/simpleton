@@ -11,6 +11,8 @@ public abstract class ResultProvider {
         this.scopeContext = scopeContext;
     }
 
+    public void setScopeContext(ScopeContext scopeContext){this.scopeContext = scopeContext;}
+
     public Result pushError(String message, int start, int length){
         StringBuilder builder = new StringBuilder()
                 .append(message)

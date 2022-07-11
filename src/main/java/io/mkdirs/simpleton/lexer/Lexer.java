@@ -1,7 +1,9 @@
 package io.mkdirs.simpleton.lexer;
 
-import io.mkdirs.simpleton.evaluator.operator.Operator;
 import io.mkdirs.simpleton.model.token.Token;
+import io.mkdirs.simpleton.model.token.VariableName;
+import io.mkdirs.simpleton.model.token.composite.IComposable;
+import io.mkdirs.simpleton.model.token.literal.*;
 import io.mkdirs.simpleton.result.Result;
 import io.mkdirs.simpleton.result.ResultProvider;
 import io.mkdirs.simpleton.scope.ScopeContext;
@@ -35,9 +37,9 @@ public class Lexer extends ResultProvider {
             }
 
 
-            var charMatch = Token.values().stream()
+            var charMatch = Token.values.stream()
                     .filter(Token::hasLiteral)
-                    .filter(e -> !e.isTextual())
+                    .filter(e -> !e.isKeyword())
                     .map(Token::getLiteral)
                     .filter(e -> car.equals(e.charAt(0)))
                     .findFirst();
@@ -45,22 +47,22 @@ public class Lexer extends ResultProvider {
 
             if(charMatch.isPresent()) {
                 String literal = charMatch.get();
-                tokens.add(Token.values().stream().filter(token -> literal.equals(token.getLiteral())).findFirst().get());
+                tokens.add(Token.values.stream().filter(token -> literal.equals(token.getLiteral())).findFirst().get());
 
                 charIndex += (literal.length());
                 continue;
 
             }else{
-                var textualMatch = Token.values().stream()
+                var textualMatch = Token.values.stream()
                         .filter(Token::hasLiteral)
-                        .filter(Token::isTextual)
+                        .filter(Token::isKeyword)
                         .map(Token::getLiteral)
                         .filter(this::isText)
                         .findFirst();
 
                 if(textualMatch.isPresent()){
                     String literal = textualMatch.get();
-                    tokens.add(Token.values().stream().filter(token -> literal.equals(token.getLiteral())).findFirst().get());
+                    tokens.add(Token.values.stream().filter(token -> literal.equals(token.getLiteral())).findFirst().get());
 
                     charIndex += (literal.length());
                     continue;
@@ -209,6 +211,71 @@ public class Lexer extends ResultProvider {
         return Result.success(collapse(tokens));
     }
 
+    /*private Token buildFunc(List<Token> tokens){
+        if(!Token.FUNC.equals(tokens.get(0)))
+            return null;
+
+        Token func = tokens.get(0);
+        List<Token> funcBody = new ArrayList<>();
+        int openParen = 1;
+        boolean finished = false;
+        int i = 1;
+        while(i< tokens.size() && !finished){
+            Token current = tokens.get(i);
+
+            if(Token.L_PAREN.equals(current)) {
+                openParen++;
+                funcBody.add(current);
+                i++;
+                continue;
+            }
+
+            if(Token.R_PAREN.equals(current)){
+                openParen--;
+
+                if(openParen <= 0){
+                    finished = true;
+                }else
+                    funcBody.add(current);
+
+                i++;
+                continue;
+            }
+
+
+            if(Token.FUNC.equals(current)){
+                Token otherFunc = buildFunc(tokens.subList(i, tokens.size()));
+                funcBody.add(otherFunc);
+            }else
+                funcBody.add(current);
+
+            i++;
+
+        }
+
+        return func.hold(funcBody);
+    }
+    private List<Token> buildFuncTokens(List<Token> tokens){
+        List<Token> result = new ArrayList<>();
+        int i = 0;
+        while(i < tokens.size()) {
+            Token current = tokens.get(i);
+
+            if (Token.FUNC.equals(current)) {
+                Token func = buildFunc(tokens.subList(i, tokens.size()));
+                result.add(func);
+                i += func.getHolds().size()+2;
+            }else {
+                result.add(current);
+                i++;
+            }
+        }
+
+        return result;
+    }
+
+     */
+
 
     private List<Token> collapse(List<Token> tokens){
         List<Token> collapsed = new ArrayList<>();
@@ -221,11 +288,18 @@ public class Lexer extends ResultProvider {
                 Token current = tokens.get(i);
                 Token next = tokens.get(i+1);
 
-                if(current.canCollapseFrom(next)) {
-                    collapsed.add(current.getCollapsedForm());
-                    ignoreNext = true;
-                }else
-                    collapsed.add(current);
+
+                if(current instanceof IComposable){
+                    Token collapsedTk = ((IComposable) current).compose(next);
+                    if(collapsedTk != null) {
+                        collapsed.add(collapsedTk);
+                        ignoreNext = true;
+                        continue;
+                    }
+                }
+
+                collapsed.add(current);
+
             }
 
         }
@@ -244,9 +318,9 @@ public class Lexer extends ResultProvider {
         while(offst < this.scopeContext.getLine().length()){
             Character c = this.scopeContext.getLine().charAt(offst);
 
-            boolean metToken = Token.values().stream()
+            boolean metToken = Token.values.stream()
                     .filter(Token::hasLiteral)
-                    .filter(e -> !e.isTextual())
+                    .filter(e -> !e.isKeyword())
                     .map(Token::getLiteral)
                     .anyMatch(e -> c.equals(e.charAt(0)));
 
@@ -297,10 +371,10 @@ public class Lexer extends ResultProvider {
         final String boolean_false = "false";
 
         if(isText(boolean_true))
-            return Result.success(new LexerSubParsingResult(Token.BOOLEAN_LITERAL.with(boolean_true), boolean_true.length()));
+            return Result.success(new LexerSubParsingResult(new BooleanLiteral(boolean_true), boolean_true.length()));
 
         else if(isText(boolean_false))
-            return Result.success(new LexerSubParsingResult(Token.BOOLEAN_LITERAL.with(boolean_false), boolean_false.length()));
+            return Result.success(new LexerSubParsingResult(new BooleanLiteral(boolean_false), boolean_false.length()));
 
         return pushError("Unexpected error", this.charIndex);
     }
@@ -318,7 +392,7 @@ public class Lexer extends ResultProvider {
         if(name.isEmpty())
             return pushError("Unexpected error", this.charIndex);
 
-        LexerSubParsingResult result = new LexerSubParsingResult(Token.VARIABLE_NAME.with(name), offset);
+        LexerSubParsingResult result = new LexerSubParsingResult(new VariableName(name), offset);
         return Result.success(result);
     }
 
@@ -357,7 +431,7 @@ public class Lexer extends ResultProvider {
         }
 
 
-        LexerSubParsingResult result = new LexerSubParsingResult(Token.CHARACTER_LITERAL.with(value), offset+1);
+        LexerSubParsingResult result = new LexerSubParsingResult(new CharacterLiteral(value), offset+1);
         return Result.success(result);
     }
 
@@ -384,7 +458,7 @@ public class Lexer extends ResultProvider {
             return pushError("Unclosed string literal", this.charIndex+offset, 1);
         }
 
-        LexerSubParsingResult result = new LexerSubParsingResult(Token.STRING_LITERAL.with(string), offset+1);
+        LexerSubParsingResult result = new LexerSubParsingResult(new StringLiteral(string), offset+1);
         return Result.success(result);
     }
 
@@ -411,11 +485,11 @@ public class Lexer extends ResultProvider {
 
         Token type = null;
         if(isInteger)
-            type = Token.INTEGER_LITERAL;
+            type = new IntegerLiteral(rawValue);
         else
-            type = Token.FLOAT_LITERAL;
+            type = new FloatLiteral(rawValue);
 
-        LexerSubParsingResult result = new LexerSubParsingResult(type.with(rawValue), offset);
+        LexerSubParsingResult result = new LexerSubParsingResult(type, offset);
 
         return Result.success(result);
     }

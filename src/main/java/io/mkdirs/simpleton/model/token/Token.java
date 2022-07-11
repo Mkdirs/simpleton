@@ -1,183 +1,111 @@
 package io.mkdirs.simpleton.model.token;
 
+import io.mkdirs.simpleton.model.token.composite.*;
+import io.mkdirs.simpleton.model.token.keword.*;
+import io.mkdirs.simpleton.model.token.literal.*;
+
 import java.util.ArrayList;
 import java.util.List;
 
-public final class Token {
+public abstract class Token {
 
-    private static int current_id = 0;
-    private static final List<Token> tokens = new ArrayList<>();
+    public static final List<Token> values = new ArrayList<>();
 
     public static final Token
-            INTEGER_LITERAL = new Token("INTEGER_LITERAL").add(),
-            FLOAT_LITERAL = new Token("FLOAT_LITERAL").add(),
-            STRING_LITERAL = new Token("STRING_LITERAL").add(),
-            CHARACTER_LITERAL = new Token("CHARACTER_LITERAL").add(),
-            BOOLEAN_LITERAL = new Token("BOOLEAN_LITERAL").add(),
-
-            VARIABLE_NAME = new Token("VARIABLE").add(),
-
-            PLUS = new Token("PLUS","+").add(),
-            MINUS = new Token("MINUS","-").add(),
-            TIMES = new Token("TIMES","*").add(),
-            DIVIDE = new Token("DIVIDE","/").add(),
+        INTEGER_LITERAL = add(new IntegerLiteral()),
+        FLOAT_LITERAL = add(new FloatLiteral()),
+        STRING_LITERAL = add(new StringLiteral()),
+        CHARACTER_LITERAL = add(new CharacterLiteral()),
+        BOOLEAN_LITERAL = add(new BooleanLiteral()),
 
 
+        PLUS = add(new Plus()),
+        MINUS = add(new Minus()),
+        STAR = add(new Star()),
+        DIVIDE = add(new Divide()),
 
+        L_PAREN = add(new LParen()),
+        R_PAREN = add(new RParen()),
+        L_BRACKET = new LBracket(),
+        R_BRACKET = new RBracket(),
+        COLON = add(new Colon()),
 
-            //Composite tokens
-            EQUALITY = new Token("EQUALITY","=="),
-            EQUALS = new Token("EQUALS","=")
-                    .withSetupCollapse(EQUALITY)
-                    .add(),
-
-
-            INEQUALITY = new Token("INEQUALITY","!="),
-            NOT = new Token("NOT","!")
-                    .withSetupCollapse(EQUALS, INEQUALITY)
-                    .add(),
-
-
-            GREATER_THAN_EQUALS = new Token("GREATER_THAN_EQUALS", ">="),
-            GREATER_THAN = new Token("GREATER_THAN",">")
-                    .withSetupCollapse(EQUALS, GREATER_THAN_EQUALS)
-                    .add(),
-
-            SMALLER_THAN_EQUALS = new Token("SMALLER_THAN_EQUALS", "<="),
-            SMALLER_THAN = new Token("SMALLER_THAN","<")
-                    .withSetupCollapse(EQUALS, SMALLER_THAN_EQUALS)
-                    .add(),
+        VARIABLE_NAME = new VariableName(),
 
 
 
+        //Composites----------------------------------------------------------
+        EQUALITY = new Equality(),
+        EQUALS = add(new Equals()),
 
-            AND = new Token("AND","&&"),
-            AMPERSAND = new Token("AMPERSAND", "&")
-                    .withSetupCollapse(AND).add(),
+        INEQUALITY = new Inequality(),
+        NOT = add(new Not()),
 
-            OR = new Token("OR","||"),
-            PIPE = new Token("PIPE", "|")
-                    .withSetupCollapse(OR).add(),
+        GREATER_THAN_EQUALS = new GreaterThanEquals(),
+        GREATER_THAN = add(new GreaterThan()),
+
+        LOWER_THAN_EQUALS = new LowerThanEquals(),
+        LOWER_THAN = add(new LowerThan()),
+
+        AND = new And(),
+        AMPERSAND = add(new Ampersand()),
+
+        OR = new Or(),
+        PIPE = add(new Pipe()),
+
+        //----------------------------------------------------------
 
 
 
 
 
 
+        LET_KW = add(new LetKW()),
+        INT_KW = add(new IntKW()),
+        FLOAT_KW = add(new FloatKW()),
+        STRING_KW = add(new StringKW()),
+        CHAR_KW = add(new CharKW()),
+        BOOL_KW = add(new BoolKW()),
+        NULL_KW = add(new NullKW()),
+        IF_KW = new IfKW(),
+        THEN_KW = new ThenKW()
 
 
-            LEFT_PARENTHESIS = new Token("LEFT_PARENTHESIS","(").add(),
-            RIGHT_PARENTHESIS = new Token("RIGHT_PARENTHESIS",")").add(),
-            COLON = new Token("COLON", ":").add(),
+                ;
 
 
+    protected String literal;
+    protected final String name;
 
 
-
-
-
-            //KW = Key Word
-            LET_KW = new Token("LET_KW", "let")
-                    .asTextual()
-                    .add(),
-            INT_KW = new Token("INT_KW","int")
-                    .asTextual()
-                    .add(),
-            FLOAT_KW = new Token("FLOAT_KW","float")
-                    .asTextual()
-                    .add(),
-            STRING_KW = new Token("STRING_KW","string")
-                    .asTextual()
-                    .add(),
-            CHAR_KW = new Token("CHAR_KW","char")
-                    .asTextual()
-                    .add(),
-            BOOL_KW = new Token("BOOL_KW","bool")
-                    .asTextual()
-                    .add(),
-            NULL_KW = new Token("NULL_KW", "null")
-                    .asTextual()
-                    .add(),
-
-
-            END_OF_LINE = new Token("END_OF_LINE").add();
-
-    private final int id;
-    private final String literal;
-    private final String name;
-    private Token collapseObject;
-    private Token collapsedForm;
-    private boolean isTextual = false;
-
-    private Token(int id, String name, String literal){
-        this.id = id;
+    protected Token(String name, String literal){
         this.name = name;
         this.literal = literal;
-        //Token.tokens.add(this);
+
     }
 
-    private Token(String name, String literal){
-        this(Token.current_id, name, literal);
-
-        Token.current_id++;
-    }
-
-    private Token(String name){
+    protected Token(String name){
         this(name, null);
-    }
-
-    private Token withSetupCollapse(Token object, Token form){
-        this.collapseObject = object;
-        this.collapsedForm = form;
-
-        return this;
-    }
-
-    private Token add(){
-        Token.tokens.add(this);
-        return this;
-    }
-
-    private Token withSetupCollapse(Token form){
-        this.collapseObject = this;
-        this.collapsedForm = form;
-
-        return this;
-    }
-
-    private Token asTextual(){
-        this.isTextual = true;
-        return this;
-    }
-
-
-    public static List<Token> values(){return Token.tokens;}
-
-    public Token with(String literal){
-        return new Token(this.id, this.name, literal);
     }
 
     public String getLiteral(){return this.literal;}
 
-    public boolean canCollapseFrom(Token other){
-        if(other == null)
-            return false;
-
-        return other.equals(this.collapseObject);
-    }
-
-    public Token getCollapsedForm(){return this.collapsedForm;}
-
+    protected void setLiteral(String literal){this.literal = literal;}
 
     public boolean hasLiteral(){return this.literal != null;}
 
-    public boolean isTextual() {
-        return isTextual;
+    public String getName(){return this.name;}
+
+    public abstract boolean isKeyword();
+
+    private static Token add(Token token){
+        values.add(token);
+        return token;
     }
 
     @Override
     public int hashCode() {
-        return this.id;
+        return this.name.hashCode();
     }
 
     @Override
@@ -188,12 +116,15 @@ public final class Token {
             return false;
 
         Token token = (Token) obj;
-        return this.id == token.id;
+        return this.name.equals(token.name);
+    }
+
+    public String text(){
+        return this.toString();
     }
 
     @Override
     public String toString() {
-        String extra = this.hasLiteral() ? "('"+this.literal+"')" : "";
-        return "Token."+this.name+extra;
+        return "Token." + this.name + (this.hasLiteral() ? "('"+this.literal+"')" : "");
     }
 }
