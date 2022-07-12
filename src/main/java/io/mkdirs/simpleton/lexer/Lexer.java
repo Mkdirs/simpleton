@@ -1,7 +1,8 @@
 package io.mkdirs.simpleton.lexer;
 
 import io.mkdirs.simpleton.model.token.Token;
-import io.mkdirs.simpleton.model.token.VariableName;
+import io.mkdirs.simpleton.model.token.composite.Func;
+import io.mkdirs.simpleton.model.token.composite.VariableName;
 import io.mkdirs.simpleton.model.token.composite.IComposable;
 import io.mkdirs.simpleton.model.token.literal.*;
 import io.mkdirs.simpleton.result.Result;
@@ -208,25 +209,26 @@ public class Lexer extends ResultProvider {
             this.charIndex++;
         }
 
-        return Result.success(collapse(tokens));
+        return buildFuncTokens(collapse(tokens));
     }
 
-    /*private Token buildFunc(List<Token> tokens){
+    private Result<Func> buildFunc(List<Token> tokens){
         if(!Token.FUNC.equals(tokens.get(0)))
             return null;
 
-        Token func = tokens.get(0);
-        List<Token> funcBody = new ArrayList<>();
+        Func func = (Func) tokens.get(0);
+        func.addInBody(Token.L_PAREN);
         int openParen = 1;
         boolean finished = false;
+        boolean lonelyComma = false;
         int i = 1;
         while(i< tokens.size() && !finished){
             Token current = tokens.get(i);
 
             if(Token.L_PAREN.equals(current)) {
                 openParen++;
-                funcBody.add(current);
                 i++;
+                func.addInBody(current);
                 continue;
             }
 
@@ -235,8 +237,9 @@ public class Lexer extends ResultProvider {
 
                 if(openParen <= 0){
                     finished = true;
-                }else
-                    funcBody.add(current);
+                }
+
+                func.addInBody(current);
 
                 i++;
                 continue;
@@ -244,37 +247,61 @@ public class Lexer extends ResultProvider {
 
 
             if(Token.FUNC.equals(current)){
-                Token otherFunc = buildFunc(tokens.subList(i, tokens.size()));
-                funcBody.add(otherFunc);
-            }else
-                funcBody.add(current);
+                Result<Func> otherFuncRes = buildFunc(tokens.subList(i, tokens.size()));
+                if(otherFuncRes.isFailure())
+                    return otherFuncRes;
+
+                func.addInBody(otherFuncRes.get());
+                i+= otherFuncRes.get().getFullBodyLength();
+                continue;
+            }else if(Token.COMMA.equals(current)) {
+                func.addInBody(current);
+                lonelyComma = (Token.COMMA.equals(tokens.get(i-1)) || i-1 == 0) || (i+1 == tokens.size()-1 || Token.COMMA.equals(tokens.get(i+1)));
+
+                if(lonelyComma)
+                    finished = true;
+            }else {
+                func.addInBody(current);
+            }
 
             i++;
 
         }
 
-        return func.hold(funcBody);
+        //lonelyComma = func.getBody().isEmpty() ? lonelyComma || false : lonelyComma;
+
+        if(lonelyComma)
+            return pushError("Error lonely comma detected");
+
+        if(openParen > 0)
+            return pushError("Error unclosed parenthesis");
+
+        return Result.success(func);
     }
-    private List<Token> buildFuncTokens(List<Token> tokens){
+    private Result<List<Token>> buildFuncTokens(List<Token> tokens){
         List<Token> result = new ArrayList<>();
         int i = 0;
         while(i < tokens.size()) {
             Token current = tokens.get(i);
 
             if (Token.FUNC.equals(current)) {
-                Token func = buildFunc(tokens.subList(i, tokens.size()));
-                result.add(func);
-                i += func.getHolds().size()+2;
+                Result<Func> funcRes = buildFunc(tokens.subList(i, tokens.size()));
+
+                if(funcRes.isFailure())
+                    return Result.failure(funcRes.getMessage());
+
+                result.add(funcRes.get());
+                i += funcRes.get().getFullBodyLength();
             }else {
                 result.add(current);
                 i++;
             }
         }
 
-        return result;
+        return Result.success(result);
     }
 
-     */
+
 
 
     private List<Token> collapse(List<Token> tokens){

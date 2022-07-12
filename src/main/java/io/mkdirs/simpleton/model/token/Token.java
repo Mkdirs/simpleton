@@ -29,8 +29,7 @@ public abstract class Token {
         L_BRACKET = new LBracket(),
         R_BRACKET = new RBracket(),
         COLON = add(new Colon()),
-
-        VARIABLE_NAME = new VariableName(),
+        COMMA = add(new Comma()),
 
 
 
@@ -52,6 +51,10 @@ public abstract class Token {
 
         OR = new Or(),
         PIPE = add(new Pipe()),
+
+
+        VARIABLE_NAME = new VariableName(),
+        FUNC = new Func(),
 
         //----------------------------------------------------------
 

@@ -79,7 +79,7 @@ public class Simpleton {
 
         }
 
-        return error("Unexpected error*", lineIndex);
+        return error("Unexpected error", lineIndex);
     }
 
     private static Result<Statement> checkVariableDeclaration(List<Token> tokens, int lineIndex){
