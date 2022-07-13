@@ -19,7 +19,7 @@ public class Simpleton {
     private static final ExpressionEvaluator evaluator = new ExpressionEvaluator(scope);
 
 
-    public static void build(String text){
+    public static Result<List<Statement>> build(String text){
         String[] lines = text.split("\n");
         int lineIndex = 0;
 
@@ -36,8 +36,7 @@ public class Simpleton {
             scope.setLine(line);
             Result<List<Token>> tokensResult = lexer.parse();
             if(tokensResult.isFailure()){
-                System.err.println(tokensResult.getMessage());
-                break;
+                return Result.failure(tokensResult.getMessage());
             }
 
             //System.out.println(lines[lineIndex]);
@@ -45,8 +44,7 @@ public class Simpleton {
             Result<Statement> result = checkTokens(tokens, lineIndex);
 
             if(result.isFailure()){
-                System.err.println(result.getMessage());
-                break;
+                return Result.failure(result.getMessage());
             }
 
             Statement statement = result.get();
@@ -69,6 +67,8 @@ public class Simpleton {
         }
 
          */
+
+        return Result.success(statements);
     }
 
     private static Result<Statement> checkTokens(List<Token> tokens, int lineIndex){
@@ -267,15 +267,19 @@ public class Simpleton {
 
     }
 
-    private static Result evaluate(Token... tokens){
+    private static Result evaluate(boolean assignVariable, Token... tokens){
         Result<ASTNode> treeResult = evaluator.buildTree(Arrays.stream(tokens).toList());
 
         if(treeResult.isFailure())
             return treeResult;
 
 
-        return evaluator.evaluate(treeResult.get());
+        return evaluator.evaluate(treeResult.get(), assignVariable);
     }
+
+    public static Result evaluate(boolean assignVariable, List<Token> tokens){return evaluate(assignVariable, tokens.toArray(Token[]::new));}
+
+    private static Result evaluate(Token... tokens){return evaluate(false, tokens);}
 
     private static Result evaluate(List<Token> tokens){return evaluate(tokens.toArray(Token[]::new));}
 
@@ -366,7 +370,7 @@ public class Simpleton {
 
     private static Result<HashMap<String, Object>> assignVariable(String name, List<Token> tokens, Token expectedType){
 
-        Result result = evaluate(tokens);
+        Result result = evaluate(true, tokens);
         if(result.isFailure())
             return Result.failure(result.getMessage());
 
@@ -374,8 +378,6 @@ public class Simpleton {
         Token value = (Token)result.get();
         Token type = expectedType;
 
-        if(Token.VOID_KW.equals(value))
-            return Result.failure("No value returned !");
 
 
         HashMap<String, Object> map = new HashMap();

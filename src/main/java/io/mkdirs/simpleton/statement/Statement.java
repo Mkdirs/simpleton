@@ -19,6 +19,8 @@ public abstract class Statement implements Serializable {
         this.infos.put(key, value);
     }
 
+    public String toText(){return this.toString();}
+
 
     @Override
     public String toString() {

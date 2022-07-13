@@ -15,4 +15,9 @@ public class VariableAssignment extends Statement{
     }
 
     public String value(){return getInfo("value");}
+
+    @Override
+    public String toText() {
+        return name()+" = '"+value()+"'";
+    }
 }

@@ -29,6 +29,12 @@ public class ScopeContext {
         this.id = id;
 
         pushFunctionSign(new FuncSignature("print", new Token[]{Token.STRING_LITERAL}));
+        pushFunctionSign(new FuncSignature("print", new Token[]{Token.CHARACTER_LITERAL}));
+        pushFunctionSign(new FuncSignature("print", new Token[]{Token.INTEGER_LITERAL}));
+        pushFunctionSign(new FuncSignature("print", new Token[]{Token.FLOAT_LITERAL}));
+        pushFunctionSign(new FuncSignature("print", new Token[]{Token.BOOLEAN_LITERAL}));
+
+
         pushFunctionSign(new FuncSignature("input", new Token[]{Token.STRING_LITERAL}, Token.STRING_LITERAL));
     }
 
