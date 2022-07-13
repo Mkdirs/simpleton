@@ -10,4 +10,9 @@ public class FuncCall extends Statement{
     }
 
     public Func func(){return getInfo("func");}
+
+    @Override
+    public String toText() {
+        return func().toText();
+    }
 }

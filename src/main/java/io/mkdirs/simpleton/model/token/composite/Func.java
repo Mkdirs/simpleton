@@ -122,5 +122,11 @@ public class Func extends Token {
         String bodyStr = String.join(",", body.stream().map(Token::toString).toList());
         return "Token."+name+"('"+literal+"{"+bodyStr+"}')";
     }
+
+    @Override
+    public String toText() {
+        String argsStr = String.join(",", args.stream().map(Token::getLiteral).toList());
+        return literal+"("+argsStr+")";
+    }
 }
 

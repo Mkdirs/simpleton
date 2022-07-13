@@ -123,7 +123,7 @@ public abstract class Token {
         return this.name.equals(token.name);
     }
 
-    public String text(){
+    public String toText(){
         return this.toString();
     }
 

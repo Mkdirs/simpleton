@@ -18,7 +18,7 @@ public class ExpressionEvaluator extends ResultProvider {
     }
 
 
-    public Result<Token> evaluate(ASTNode tree){
+    public Result<Token> evaluate(ASTNode tree, boolean assignVariable){
         if(tree == null)
             return Result.success(null);
 
@@ -42,6 +42,9 @@ public class ExpressionEvaluator extends ResultProvider {
 
                 if(signature == null)
                     return Result.failure("Function '"+((Func) token)+"' does not exist");
+
+                if(assignVariable && Token.VOID_KW.equals(signature.getReturnType()))
+                    return Result.failure("No value returned !");
 
                 switch (signature.getLocation()){
                     case -1:
@@ -91,6 +94,8 @@ public class ExpressionEvaluator extends ResultProvider {
 
         return pushError("Unknown operator: \""+tree.getToken().getLiteral()+"\"");
     }
+
+    public Result<Token> evaluate(ASTNode tree){return evaluate(tree, false);}
 
     private Optional<Operator> getOperator(Token token){
         return Arrays.stream(Operator.OPERATORS).filter(e  -> e.getToken().equals(token)).findFirst();
