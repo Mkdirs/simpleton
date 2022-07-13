@@ -1,15 +1,15 @@
 package io.mkdirs.simpleton.evaluator;
 
-import io.mkdirs.simpleton.evaluator.operator.Operand;
 import io.mkdirs.simpleton.evaluator.operator.Operator;
 import io.mkdirs.simpleton.model.token.Token;
+import io.mkdirs.simpleton.model.token.composite.Func;
 import io.mkdirs.simpleton.result.Result;
 import io.mkdirs.simpleton.result.ResultProvider;
+import io.mkdirs.simpleton.scope.FuncSignature;
 import io.mkdirs.simpleton.scope.ScopeContext;
 import io.mkdirs.simpleton.scope.VariableHolder;
 
 import java.util.*;
-import java.util.stream.Stream;
 
 public class ExpressionEvaluator extends ResultProvider {
 
@@ -22,40 +22,69 @@ public class ExpressionEvaluator extends ResultProvider {
         if(tree == null)
             return Result.success(null);
 
-        if(tree.isLeaf())
+        if(tree.isLeaf()) {
+            Token token = tree.getToken();
+            if(Token.VARIABLE_NAME.equals(token)){
+                VariableHolder var = this.scopeContext.getVariable(token.getLiteral()).orElse(null);
+
+                if(var == null)
+                    return Result.failure("Variable '"+token.getLiteral()+"' does not exist");
+
+                return Result.success(var.getValue());
+
+            }else if(Token.FUNC.equals(token)){
+                Result funcRes = ((Func) token).computeArgs(this);
+
+                if(funcRes.isFailure())
+                    return funcRes;
+
+                FuncSignature signature = this.scopeContext.getFunctionSign((Func) token).orElse(null);
+
+                if(signature == null)
+                    return Result.failure("Function '"+((Func) token)+"' does not exist");
+
+                switch (signature.getLocation()){
+                    case -1:
+                        Result<Token> r = this.scopeContext.getNativeFuncExecutor().execute((Func) token);
+                        if(r.isFailure())
+                            return r;
+
+                        if(!signature.getReturnType().equals(r.get()))
+                            return Result.failure("Unexpected error: "+token+" should return '"+signature.getReturnType()+"' but instead returned '"+r.get()+"'");
+
+
+
+                        return Result.success(r.get());
+
+                    default:
+                        //TODO: implement
+                        break;
+                }
+            }
             return Result.success(tree.getToken());
-
-
-        Token left = evaluate(tree.getLeft()).get();
-        if(Token.VARIABLE_NAME.equals(left)) {
-            VariableHolder var = this.scopeContext.getVariable(left.getLiteral()).orElse(null);
-
-            if(var == null)
-                return pushError("Variable '"+left.getLiteral()+"' does not exist");
-            else
-                left = var.getValue();
         }
 
 
 
-        Token right = evaluate(tree.getRight()).get();
-        if(Token.VARIABLE_NAME.equals(right)) {
-            VariableHolder var = this.scopeContext.getVariable(right.getLiteral()).orElse(null);
+        Result<Token> left = evaluate(tree.getLeft());
 
-            if(var == null)
-                return pushError("Variable '"+right.getLiteral()+"' does not exist");
-            else
-                right = var.getValue();
-        }
+        if(left.isFailure())
+            return pushError(left.getMessage());
+
+
+        Result<Token> right = evaluate(tree.getRight());
+
+        if(right.isFailure())
+            return pushError(right.getMessage());
 
 
 
         Optional<Operator> operator = getOperator(tree.getToken());
 
         if(operator.isPresent()){
-            Optional<Token> r = operator.get().evaluate(left, right);
+            Optional<Token> r = operator.get().evaluate(left.get(), right.get());
             if(r.isEmpty())
-                return pushError("Unable to apply '"+operator.get().getToken().getLiteral()+"' on '"+left+"' and '"+right+"'");
+                return pushError("Unable to apply '"+operator.get().getToken().getLiteral()+"' on '"+left.get()+"' and '"+right.get()+"'");
 
             return Result.success(r.get());
         }

@@ -70,6 +70,7 @@ public abstract class Token {
         CHAR_KW = add(new CharKW()),
         BOOL_KW = add(new BoolKW()),
         NULL_KW = add(new NullKW()),
+        VOID_KW = new VoidKW(),
         IF_KW = new IfKW(),
         THEN_KW = new ThenKW()
 
