@@ -4,7 +4,9 @@ import io.mkdirs.simpleton.evaluator.ASTNode;
 import io.mkdirs.simpleton.evaluator.ExpressionEvaluator;
 import io.mkdirs.simpleton.lexer.Lexer;
 import io.mkdirs.simpleton.model.token.Token;
+import io.mkdirs.simpleton.model.token.composite.Func;
 import io.mkdirs.simpleton.result.Result;
+import io.mkdirs.simpleton.scope.FuncSignature;
 import io.mkdirs.simpleton.scope.ScopeContext;
 import io.mkdirs.simpleton.scope.VariableHolder;
 import io.mkdirs.simpleton.statement.*;
@@ -38,7 +40,7 @@ public class Simpleton {
                 break;
             }
 
-            System.out.println(lines[lineIndex]);
+            //System.out.println(lines[lineIndex]);
             List<Token> tokens = tokensResult.get();
             Result<Statement> result = checkTokens(tokens, lineIndex);
 
@@ -55,24 +57,29 @@ public class Simpleton {
             statements.add(statement);
 
 
-            System.out.println(result.get());
+            //System.out.println(result.get());
 
             lineIndex++;
         }
 
-        System.out.println("Build complete\n");
+        /*System.out.println("Build complete\n");
 
         for (Statement s : statements){
             System.out.println(s.getClass().getSimpleName());
         }
+
+         */
     }
 
     private static Result<Statement> checkTokens(List<Token> tokens, int lineIndex){
         if(Token.LET_KW.equals(tokens.get(0))){
             return checkVariableDeclaration(tokens, lineIndex);
 
-        }else if(Token.VARIABLE_NAME.equals(tokens.get(0))){
+        }else if(Token.VARIABLE_NAME.equals(tokens.get(0))) {
             return checkVariableAssignation(tokens, lineIndex);
+
+        }else if(Token.FUNC.equals(tokens.get(0)) && tokens.size() == 1){
+            return checkFuncCall(tokens.get(0), lineIndex);
 
         }else if(Token.IF_KW.equals(tokens.get(0))) {
             return checkIfClosure(tokens, lineIndex);
@@ -80,6 +87,17 @@ public class Simpleton {
         }
 
         return error("Unexpected error", lineIndex);
+    }
+
+    private static Result<Statement> checkFuncCall(Token token, int lineIndex){
+        Result result = evaluate(token);
+        if(result.isFailure())
+            return error(result.getMessage(), lineIndex);
+
+
+        Func func = (Func) token;
+
+        return Result.success(new FuncCall().func(func));
     }
 
     private static Result<Statement> checkVariableDeclaration(List<Token> tokens, int lineIndex){
@@ -197,7 +215,7 @@ public class Simpleton {
             return error(res.getMessage(), lineIndex);
 
         return Result.success(
-                new VariableAssignation()
+                new VariableAssignment()
                         .name(name.getLiteral())
                         .value( (String) res.get().get("value"))
         );
@@ -249,16 +267,17 @@ public class Simpleton {
 
     }
 
-    private static Result evaluate(List<Token> tokens){
-        Result<ASTNode> treeResult = evaluator.buildTree(tokens);
+    private static Result evaluate(Token... tokens){
+        Result<ASTNode> treeResult = evaluator.buildTree(Arrays.stream(tokens).toList());
 
         if(treeResult.isFailure())
             return treeResult;
 
-        Result<Token> result = evaluator.evaluate(treeResult.get());
 
-        return result;
+        return evaluator.evaluate(treeResult.get());
     }
+
+    private static Result evaluate(List<Token> tokens){return evaluate(tokens.toArray(Token[]::new));}
 
     private static Result error(String message, int lineIndex){
         return Result.failure("Error at line "+(lineIndex+1)+":\n"+scope.getLine()+"\n"+message);
@@ -354,15 +373,10 @@ public class Simpleton {
 
         Token value = (Token)result.get();
         Token type = expectedType;
-        if(Token.VARIABLE_NAME.equals(value)){
-            Optional<VariableHolder> opt = scope.getVariable(value.getLiteral());
-            if(opt.isEmpty()){
-                return Result.failure("Variable '"+value.getLiteral()+"' does not exist");
-            }
 
-            value = opt.get().getValue();
-            type = opt.get().getType();
-        }
+        if(Token.VOID_KW.equals(value))
+            return Result.failure("No value returned !");
+
 
         HashMap<String, Object> map = new HashMap();
         if(type == null) {

@@ -276,6 +276,7 @@ public class Lexer extends ResultProvider {
         if(openParen > 0)
             return pushError("Error unclosed parenthesis");
 
+
         return Result.success(func);
     }
     private Result<List<Token>> buildFuncTokens(List<Token> tokens){

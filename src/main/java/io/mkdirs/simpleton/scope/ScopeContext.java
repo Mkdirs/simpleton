@@ -1,6 +1,9 @@
 package io.mkdirs.simpleton.scope;
 
+import io.mkdirs.simpleton.func_executor.IFuncExecutor;
+import io.mkdirs.simpleton.func_executor.NativeFuncExecutor;
 import io.mkdirs.simpleton.model.token.Token;
+import io.mkdirs.simpleton.model.token.composite.Func;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -12,6 +15,9 @@ public class ScopeContext {
     private final ScopeContext parent;
     private final int id;
     private final HashMap<String, VariableHolder> variables = new HashMap<>();
+    private final List<FuncSignature> functions = new ArrayList<>();
+
+    private final IFuncExecutor nativeFuncExecutor = new NativeFuncExecutor();
 
     private String line;
     private boolean expectStructureClosure = false;
@@ -21,6 +27,9 @@ public class ScopeContext {
 
         this.parent = parent;
         this.id = id;
+
+        pushFunctionSign(new FuncSignature("print", new Token[]{Token.STRING_LITERAL}));
+        pushFunctionSign(new FuncSignature("input", new Token[]{Token.STRING_LITERAL}, Token.STRING_LITERAL));
     }
 
     public ScopeContext(){this(null, 0);}
@@ -29,6 +38,10 @@ public class ScopeContext {
 
     public void setLine(String line) {
         this.line = line;
+    }
+
+    public IFuncExecutor getNativeFuncExecutor() {
+        return nativeFuncExecutor;
     }
 
     public void setExpectStructureClosure(boolean expectStructureClosure) {
@@ -55,6 +68,27 @@ public class ScopeContext {
 
     public int getId() {
         return id;
+    }
+
+    public void pushFunctionSign(FuncSignature signature){
+        this.functions.add(signature);
+    }
+
+    public Optional<FuncSignature> getFunctionSign(Func func) throws IllegalStateException{
+        if(!func.areArgsComputed())
+            throw new IllegalStateException("Function "+func+" has not computed its arguments !");
+
+        Optional<FuncSignature> opt = this.functions.stream()
+                .filter(e -> e.match(func))
+                .findFirst();
+
+        if(opt.isPresent())
+            return opt;
+
+        if(this.parent != null)
+            return this.parent.getFunctionSign(func);
+
+        return Optional.empty();
     }
 
     public void pushVariable(String name, Token type, Token value){
