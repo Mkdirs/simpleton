@@ -42,7 +42,7 @@ public class Simpleton {
     }
 
     public Result<List<ASTNode>> build(List<Token> tokens){
-        
+
         return Result.failure("TODO");
     }
 
