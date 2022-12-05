@@ -13,9 +13,13 @@ import java.util.*;
 
 public class ExpressionEvaluator extends ResultProvider {
 
+    ScopeContext scopeContext;
+
     public ExpressionEvaluator(ScopeContext scopeContext){
-        super(scopeContext);
+        this.scopeContext = scopeContext;
     }
+
+    public void setScopeContext(ScopeContext scopeContext){this.scopeContext = scopeContext;}
 
 
     public Result<Token> evaluate(ASTNode tree, boolean assignVariable){
@@ -69,13 +73,13 @@ public class ExpressionEvaluator extends ResultProvider {
 
 
 
-        Result<Token> left = evaluate(tree.getLeft());
+        Result<Token> left = evaluate(tree.left());
 
         if(left.isFailure())
             return pushError(left.getMessage());
 
 
-        Result<Token> right = evaluate(tree.getRight());
+        Result<Token> right = evaluate(tree.right());
 
         if(right.isFailure())
             return pushError(right.getMessage());
@@ -106,7 +110,7 @@ public class ExpressionEvaluator extends ResultProvider {
         if(tokens.isEmpty())
             return Result.success(null);
         else if(tokens.size() == 1)
-            return Result.success(new ASTNode(null, tokens.get(0), null));
+            return Result.success(new ASTNode(tokens.get(0)));
 
         int closingParenthesis = getClosingParenthesis(0, tokens);
 
@@ -123,7 +127,9 @@ public class ExpressionEvaluator extends ResultProvider {
         Result<ASTNode> left = buildTree(tokens.subList(0, mainOperatorIndex));
         Result<ASTNode> right = buildTree(tokens.subList(mainOperatorIndex+1, tokens.size()));
 
-        ASTNode tree = new ASTNode(left.get(), operator, right.get());
+        ASTNode tree = new ASTNode(operator);
+        tree.addChild(left.get());
+        tree.addChild(right.get());
 
         return Result.success(tree);
     }

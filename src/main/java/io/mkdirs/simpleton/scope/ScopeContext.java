@@ -20,8 +20,6 @@ public class ScopeContext {
     private final IFuncExecutor nativeFuncExecutor = new NativeFuncExecutor();
 
     private String line;
-    private boolean expectStructureClosure = false;
-    private boolean skipIf = false;
 
     public ScopeContext(ScopeContext parent, int id){
 
@@ -50,21 +48,6 @@ public class ScopeContext {
         return nativeFuncExecutor;
     }
 
-    public void setExpectStructureClosure(boolean expectStructureClosure) {
-        this.expectStructureClosure = expectStructureClosure;
-    }
-
-    public boolean isExpectingStructureClosure() {
-        return expectStructureClosure;
-    }
-
-    public void setSkipIf(boolean skipIf) {
-        this.skipIf = skipIf;
-    }
-
-    public boolean isSkippingIf() {
-        return skipIf;
-    }
 
     public ScopeContext child(){
         return new ScopeContext(this, this.id+1);

@@ -15,16 +15,16 @@ public class Lexer extends ResultProvider {
 
     private int charIndex = 0;
 
-    public Lexer(ScopeContext scopeContext) {
-        super(scopeContext);
-    }
 
 
-    public Result<List<Token>> parse() {
+    public Result<List<Token>> parse(String statement) {
+        setStatement(statement);
+
         List<Token> tokens = new ArrayList<>();
         this.charIndex = 0;
 
-        char[] chars = this.scopeContext.getLine().toCharArray();
+        char[] chars = statement.toCharArray();
+
 
         while(this.charIndex < chars.length){
 
@@ -338,13 +338,13 @@ public class Lexer extends ResultProvider {
 
 
     private boolean isText(String s){
-        if(this.charIndex+s.length() > this.scopeContext.getLine().length())
+        if(this.charIndex+s.length() > this.statement.length())
             return false;
 
         String extracted = "";
         int offst = this.charIndex;
-        while(offst < this.scopeContext.getLine().length()){
-            Character c = this.scopeContext.getLine().charAt(offst);
+        while(offst < this.statement.length()){
+            Character c = this.statement.charAt(offst);
 
             boolean metToken = Token.values.stream()
                     .filter(Token::hasLiteral)
@@ -367,10 +367,10 @@ public class Lexer extends ResultProvider {
 
 
     private Character seekTo(int charIndex){
-        if(charIndex < 0 || charIndex >= this.scopeContext.getLine().length())
+        if(charIndex < 0 || charIndex >= this.statement.length())
             return Character.UNASSIGNED;
 
-        return this.scopeContext.getLine().charAt(charIndex);
+        return this.statement.charAt(charIndex);
     }
 
 
@@ -404,7 +404,7 @@ public class Lexer extends ResultProvider {
         else if(isText(boolean_false))
             return Result.success(new LexerSubParsingResult(new BooleanLiteral(boolean_false), boolean_false.length()));
 
-        return pushError("Unexpected error", this.charIndex);
+        return pushError("Unexpected error at parseBoolean", this.charIndex);
     }
 
     private Result<LexerSubParsingResult> parseVariableName(){
@@ -418,7 +418,7 @@ public class Lexer extends ResultProvider {
         }
 
         if(name.isEmpty())
-            return pushError("Unexpected error", this.charIndex);
+            return pushError("Unexpected error at parseVariableName", this.charIndex);
 
         LexerSubParsingResult result = new LexerSubParsingResult(new VariableName(name), offset);
         return Result.success(result);
@@ -427,7 +427,7 @@ public class Lexer extends ResultProvider {
     private Result<LexerSubParsingResult> parseCharacter(){
         //Begin
         if(!seekTo(this.charIndex).equals('\'')) {
-            return pushError("Unexpected error", this.charIndex, 1);
+            return pushError("Unexpected error at parseCharacter", this.charIndex, 1);
         }
 
         int offset = 1;
@@ -466,7 +466,7 @@ public class Lexer extends ResultProvider {
     private Result<LexerSubParsingResult> parseString(){
         //Begin
         if(!seekTo(this.charIndex).equals('\"')) {
-            return pushError("Unexpected error", this.charIndex, 1);
+            return pushError("Unexpected error at parseString", this.charIndex, 1);
         }
 
         boolean closed = false;
@@ -492,7 +492,7 @@ public class Lexer extends ResultProvider {
 
     private Result<LexerSubParsingResult> parseNumber(){
         if(!Character.isDigit(seekTo(this.charIndex))){
-            return pushError("Unexpected error", this.charIndex, 1);
+            return pushError("Unexpected error at parseNumber", this.charIndex, 1);
         }
 
         String rawValue = "";
