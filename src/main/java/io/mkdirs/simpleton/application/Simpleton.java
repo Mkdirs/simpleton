@@ -7,6 +7,7 @@ import io.mkdirs.simpleton.model.token.Token;
 import io.mkdirs.simpleton.model.token.composite.VariableName;
 import io.mkdirs.simpleton.result.Result;
 import io.mkdirs.simpleton.scope.ScopeContext;
+import io.mkdirs.simpleton.scope.VariableHolder;
 
 import java.util.*;
 
@@ -46,6 +47,12 @@ public class Simpleton {
                     System.err.println(exprRes.getMessage());
                     return;
                 }
+
+                VariableHolder varHolder = SCRIPT_CTX.getVariable(varName).get();
+                if(!varHolder.getType().equals(SCRIPT_CTX.typeOf(exprRes.get())) && !Token.NULL_KW.equals(SCRIPT_CTX.typeOf(exprRes.get()))){
+                    System.err.println("Expected type "+varHolder.getType()+" but instead got "+SCRIPT_CTX.typeOf(exprRes.get()));
+                    return;
+                }
                 SCRIPT_CTX.getVariable(varName).get().setValue(exprRes.get());
 
             }else if(Token.LET_KW.equals(left.getToken())){
@@ -62,10 +69,17 @@ public class Simpleton {
                     return;
                 }
 
-                if(type == null)
+                if(type == null) {
                     type = SCRIPT_CTX.typeOf(exprRes.get());
+                    if(Token.NULL_KW.equals(type)){
+                        System.err.println("Cannot infer type of variable "+varName);
+                        return;
+                    }
+                }
 
-                if(!type.equals(SCRIPT_CTX.typeOf(exprRes.get()))){
+
+
+                if(!type.equals(SCRIPT_CTX.typeOf(exprRes.get())) && !Token.NULL_KW.equals(SCRIPT_CTX.typeOf(exprRes.get()))  ){
                     System.err.println("Expected type "+type+" but instead got "+SCRIPT_CTX.typeOf(exprRes.get()));
                     return;
                 }
@@ -212,7 +226,7 @@ public class Simpleton {
         //let a : type
         //let a                 special case, semantically wrong but handled here anyway to make it easier for the assignment tree builder
 
-        if(match(tokens, "let_kw variable_name colon type eol")) {
+        if(match(tokens, "let_kw variable_name colon type"+(fromAssignmentTreeBuilder ? "" : " eol") )) {
             //let_kw { variable_name, type}
             ASTNode root = new ASTNode(tokens.get(0));
 
