@@ -2,29 +2,59 @@ package io.mkdirs.simpleton.evaluator;
 
 import io.mkdirs.simpleton.model.token.Token;
 
+import java.util.*;
+import java.util.stream.Collectors;
+
 public class ASTNode {
 
     private final Token token;
-    private final ASTNode left;
-    private final ASTNode right;
 
-    public ASTNode(ASTNode left, Token token, ASTNode right){
-        this.left = left;
+    private List<ASTNode> children = new ArrayList<>();
+    //private final ASTNode left;
+    //private final ASTNode right;
+
+    public ASTNode(Token token){
         this.token = token;
-        this.right = right;
     }
 
     public Token getToken() {
         return token;
     }
 
-    public ASTNode getLeft() {
-        return left;
+    public void addChild(ASTNode child){
+        children.add(child);
     }
 
-    public ASTNode getRight() {
-        return right;
+    public void addChildren(Collection<ASTNode> children){
+        this.children.addAll(children);
     }
 
-    public boolean isLeaf(){return this.left == null && this.right == null;}
+    public void addChildren(ASTNode...nodes){
+        addChildren(List.of(nodes));
+    }
+
+    public ASTNode left() {
+        if(children.isEmpty())
+            return null;
+
+        return children.get(0);
+    }
+
+    public ASTNode right() {
+        if(children.size() < 2)
+            return null;
+
+        return children.get(1);
+    }
+
+    public boolean isLeaf(){return this.children.isEmpty();}
+
+    @Override
+    public String toString() {
+        if(isLeaf())
+            return token.toString();
+        else {
+            return token.toString() + "{" + children.stream().map(ASTNode::toString)/*.collect(Collectors.joining())*/ + "}";
+        }
+    }
 }
