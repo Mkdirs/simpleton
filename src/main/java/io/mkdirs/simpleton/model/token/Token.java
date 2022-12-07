@@ -72,7 +72,9 @@ public abstract class Token {
         NULL_KW = add(new NullKW()),
         VOID_KW = new VoidKW(),
         IF_KW = new IfKW(),
-        THEN_KW = new ThenKW()
+        THEN_KW = new ThenKW(),
+
+        EOL = new EOL()
 
 
                 ;
@@ -101,6 +103,8 @@ public abstract class Token {
     public String getName(){return this.name;}
 
     public abstract boolean isKeyword();
+
+    public String group(){return "";}
 
     private static Token add(Token token){
         values.add(token);

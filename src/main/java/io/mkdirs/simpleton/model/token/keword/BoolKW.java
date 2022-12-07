@@ -10,4 +10,9 @@ public class BoolKW extends Token {
     public boolean isKeyword() {
         return true;
     }
+
+    @Override
+    public String group() {
+        return "TYPE";
+    }
 }

@@ -30,11 +30,16 @@ public class Main {
             if(line.equals(":q"))
                 break;
 
-            Result<List<Token>> result = simpleton.build(line);
+            Result<List<Token>> result = simpleton.buildTokens(line);
             if(result.isFailure())
                 System.err.println(result.getMessage());
             else {
-                System.out.println(Arrays.toString(result.get().stream().map(Token::toText).toArray()));
+                Result<List<ASTNode>> trees = simpleton.buildTrees(result.get());
+                if(trees.isFailure()){
+                    System.err.println(trees.getMessage());
+                    continue;
+                }
+                simpleton.execute(trees.get());
             }
             System.out.println();
         }while(true);

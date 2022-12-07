@@ -3,12 +3,13 @@ package io.mkdirs.simpleton.evaluator;
 import io.mkdirs.simpleton.model.token.Token;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class ASTNode {
 
     private final Token token;
 
-    private List<ASTNode> children = new LinkedList<>();
+    private List<ASTNode> children = new ArrayList<>();
     //private final ASTNode left;
     //private final ASTNode right;
 
@@ -26,6 +27,10 @@ public class ASTNode {
 
     public void addChildren(Collection<ASTNode> children){
         this.children.addAll(children);
+    }
+
+    public void addChildren(ASTNode...nodes){
+        addChildren(List.of(nodes));
     }
 
     public ASTNode left() {
@@ -48,7 +53,8 @@ public class ASTNode {
     public String toString() {
         if(isLeaf())
             return token.toString();
-        else
-            return token.toString()+"{"+ Arrays.toString(children.stream().map(ASTNode::toString).toArray())+"}";
+        else {
+            return token.toString() + "{" + children.stream().map(ASTNode::toString)/*.collect(Collectors.joining())*/ + "}";
+        }
     }
 }
