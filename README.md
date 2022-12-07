@@ -6,7 +6,9 @@ It can run simple CLI programs.
 # Getting Started
 - [Variable Declaration](#variable-declaration)
 - [Variable Assignment](#variable-assignment)
-- [Operators](#operators)
+- [Operations](#operations)
+- [Functions](#functions)
+- [Example](#example)
 
 # Variable Declaration
 
@@ -26,15 +28,7 @@ When doing so, the type can be inferred.\
 
 > ***WARNING:***
 The language cannot infer the value ``null`` since it has no real type.\
-``let name = null``\
-> \
-The statement above will not fail but *name* will have no type and its value would not be changed *(except with `null`)* :
-```
-let name = null
-name = "hello world" <--- Will fail
-name = null <------------ Will not fail
-```
-
+``let name = null``
 
 # Variable Assignment
 
@@ -44,33 +38,94 @@ As you may have seen, assigning a value to a variable is pretty simple:\
 Of course, *name* must be declared beforehand.\
 Also, *value* must either be ``null`` or match the type of *name*.
 
-# Operators
+# Operations
 
-The operators in Simpleton consist of:
-- ``+``  [Plus](#plus)
-- ``-``  [Minus](#minus)
-- ``*``  [Star](#star)
-- ``/``  [Divide](#divide)
-- ``&&`` [And](#and)
-- ``||`` [Or](#or)
-- ``!``  [Not](#not)
-- ``>``  [Greater Than](#greater-than)
-- ``>=`` [Greater Than Or Equals To](#greater-than-or-equals-to)
-- ``<``  [Lower Than](#lower-than)
-- ``<=`` [Lower Than Or Equals To](#lower-than-or-equals-to)
-- ``==`` [Equality](#equality)
-- ``!=`` [Inequality](#inequality)
+The operations supported on the types are:
+- ## ``+`` Plus
+  - ``string + string`` returns the concatenation of two strings.
+  - ``int + int``
+  - ``float + float``
+  - ``int + float`` (or ``float + int``) will always return a float.
 
-## Plus
-## Minus
-## Star
-## Divide
-## And
-## Or
-## Not
-## Greater Than
-## Greater Than Or Equals To
-## Lower Than
-## Lower Than Or Equals To
-## Equality
-## Inequality
+- ## ``-`` Minus
+  - ``int - int``
+  - ``float - float``
+  - ``int - float`` (or ``float - int``) will always return a float.
+  - ``-int`` (or ``-float``)
+
+- ## ``*`` Star
+  - ``int * int``
+  - ``float * float``
+  - ``int * float`` (or ``float * int``)
+  
+- ## ``/`` Divide
+  - ``int / int`` will return the integer part of the result.
+  - ``float / float``
+  - ``int / float`` (or ``float / int``)
+
+- ## ``&&`` And
+  - ``bool && bool``
+
+- ## ``||`` Or
+  - ``bool || bool``
+
+- ## ``!`` Not
+  - ``!bool``
+
+- ## ``==`` Equality
+  - ``string == string``
+  - ``char == char``
+  - ``int == int``
+  - ``float == float``
+  - ``bool == bool``
+
+- ## ``!=`` Inequality
+  - ``string != string``
+  - ``char != char``
+  - ``int != int``
+  - ``float != float``
+  - ``bool != bool``
+
+- ## ``>`` Greater Than
+  - ``int > int``
+  - ``float > float``
+  - ``char > char`` returns if the first char comes after the second.
+
+- ## ``>=`` Greater Than Or Equals To
+  - ``int >= int``
+  - ``float >= float``
+  - ``char >= char``
+
+- ## ``<`` Lower Than
+  - ``int < int``
+  - ``float < float``
+  - ``char < char`` returns if the first char comes before the second.
+
+- ## ``<=`` Lower Than Or Equals To
+  - ``int <= int``
+  - ``float <= float``
+  - ``char <= char``
+
+# Functions
+
+Use the syntax below to call a function:\
+``name(arg1, arg2, ..., argn)``
+
+The language doesn't support functions declaration for the moment.\
+But it provides built-in functions you can already use such as:
+
+``print(expression)``\
+This will print the value of _expression_ on the standard output.
+
+``input(prompt)``\
+This will print _prompt_ on the standard output and return a value from the standard input.
+> Note:\
+> _prompt_ is a string and the function returns a string.
+
+# Example
+
+````
+let name = input("What is your name?: ")
+let greeting : string = "Hello "+name+" !"
+print(greeting)
+````
