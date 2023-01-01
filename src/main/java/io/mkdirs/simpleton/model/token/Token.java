@@ -74,6 +74,8 @@ public abstract class Token {
         IF_KW = add(new IfKW()),
         ELSE_KW = add(new ElseKW()),
         THEN_KW = add(new ThenKW()),
+        WHILE_KW = add(new WhileKW()),
+        DO_KW = add(new DoKW()),
 
         EOL = new EOL()
 

@@ -49,7 +49,9 @@ public class Main {
                 return;
             }
 
-            simpleton.execute(nodesRes.get());
+            var result = simpleton.execute(nodesRes.get());
+            if(result.isFailure())
+                System.err.println(result.getMessage());
         } catch (IOException e) {
             System.err.println(e.getMessage());
         }

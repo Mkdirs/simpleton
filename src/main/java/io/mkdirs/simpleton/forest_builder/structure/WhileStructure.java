@@ -10,24 +10,24 @@ import io.mkdirs.simpleton.result.Result;
 
 import java.util.List;
 
-public class ElseStructure extends AbstractStructure {
+public class WhileStructure extends AbstractStructure {
 
     private ExpressionEvaluator evaluator;
 
-    public ElseStructure(ExpressionEvaluator evaluator, TreeBuilder head){
+    public WhileStructure(ExpressionEvaluator evaluator, TreeBuilder head){
         super(head);
         this.evaluator = evaluator;
 
     }
 
-    public ElseStructure(ExpressionEvaluator evaluator) {
+    public WhileStructure(ExpressionEvaluator evaluator) {
         super();
         this.evaluator = evaluator;
     }
 
     @Override
     protected boolean isValid(List<Token> tokens) {
-        return Simpleton.match(tokens, "else_kw do_kw left_bracket eol");
+        return Simpleton.match(tokens, "while_kw left_parenthesis * right_parenthesis do_kw left_bracket eol");
     }
 
     @Override
@@ -35,17 +35,26 @@ public class ElseStructure extends AbstractStructure {
         if(!isValid(tokens))
             return super.build(tokens);
 
-        ASTNode root = new ASTNode(Token.ELSE_KW);
+        ASTNode root = new ASTNode(Token.WHILE_KW);
+
+        Result<ASTNode> exprRes = evaluator.buildTree(tokens.subList(2, tokens.indexOf(Token.R_PAREN)));
+
+        if(exprRes.isFailure())
+            return new TreeBuilderResult(exprRes, 0);
 
         int indexOfEOL = tokens.indexOf(Token.EOL);
-        TreeBuilderResult bodyResult = buildBody(tokens.subList(indexOfEOL+1, tokens.size()));
+        int jmp = indexOfEOL+1;
+        TreeBuilderResult bodyResult = buildBody(tokens.subList(jmp, tokens.size()));
 
         if(bodyResult.tree().isFailure())
             return bodyResult;
 
-        root.addChild(bodyResult.tree().get());
+        jmp += bodyResult.jumpIndex();
+        root.addChildren(exprRes.get(), bodyResult.tree().get());
 
-        return new TreeBuilderResult(Result.success(root), bodyResult.jumpIndex()+indexOfEOL+1);
+
+
+        return new TreeBuilderResult(Result.success(root), jmp);
 
     }
 }
