@@ -2,9 +2,10 @@ package io.mkdirs.simpleton.application;
 
 import io.mkdirs.simpleton.evaluator.ASTNode;
 import io.mkdirs.simpleton.evaluator.ExpressionEvaluator;
+import io.mkdirs.simpleton.forest_builder.*;
+import io.mkdirs.simpleton.forest_builder.structure.IfStructure;
 import io.mkdirs.simpleton.lexer.Lexer;
 import io.mkdirs.simpleton.model.token.Token;
-import io.mkdirs.simpleton.model.token.composite.VariableName;
 import io.mkdirs.simpleton.result.Result;
 import io.mkdirs.simpleton.scope.ScopeContext;
 import io.mkdirs.simpleton.scope.VariableHolder;
@@ -14,7 +15,9 @@ import java.util.*;
 public class Simpleton {
 
     private final ScopeContext SCRIPT_CTX = new ScopeContext();
-    private final ExpressionEvaluator evaluator = new ExpressionEvaluator(SCRIPT_CTX);
+    private ScopeContext currentScope = SCRIPT_CTX;
+    private final ExpressionEvaluator evaluator = new ExpressionEvaluator(currentScope);
+
 
     public void execute(List<ASTNode> nodes){
         for(ASTNode node : nodes){
@@ -26,66 +29,97 @@ public class Simpleton {
         if(Token.LET_KW.equals(node.getToken())){
             String varName = node.left().getToken().getLiteral();
             Token type = node.right().getToken();
-            if(SCRIPT_CTX.getVariable(varName).isPresent()){
+            if(currentScope.getVariable(varName).isPresent()){
                 System.err.println("Variable "+varName+" is already declared !");
                 return;
             }
 
-            SCRIPT_CTX.pushVariable(varName, type);
-        }else if(Token.EQUALS.equals(node.getToken())){
+            currentScope.pushVariable(varName, type);
+        }else if(Token.EQUALS.equals(node.getToken())) {
             ASTNode left = node.left();
             Result<Token> exprRes = evaluator.evaluate(node.right(), true);
 
-            if(Token.VARIABLE_NAME.equals(left.getToken())){
+            if (Token.VARIABLE_NAME.equals(left.getToken())) {
                 String varName = left.getToken().getLiteral();
-                if(!SCRIPT_CTX.getVariable(varName).isPresent()){
-                    System.err.println("Undeclared variable "+varName+" !");
+                if (!currentScope.getVariable(varName).isPresent()) {
+                    System.err.println("Undeclared variable " + varName + " !");
                     return;
                 }
 
-                if(exprRes.isFailure()){
+                if (exprRes.isFailure()) {
                     System.err.println(exprRes.getMessage());
                     return;
                 }
 
-                VariableHolder varHolder = SCRIPT_CTX.getVariable(varName).get();
-                if(!varHolder.getType().equals(SCRIPT_CTX.typeOf(exprRes.get())) && !Token.NULL_KW.equals(SCRIPT_CTX.typeOf(exprRes.get()))){
-                    System.err.println("Expected type "+varHolder.getType()+" but instead got "+SCRIPT_CTX.typeOf(exprRes.get()));
+                VariableHolder varHolder = currentScope.getVariable(varName).get();
+                if (!varHolder.getType().equals(currentScope.typeOf(exprRes.get())) && !Token.NULL_KW.equals(currentScope.typeOf(exprRes.get()))) {
+                    System.err.println("Expected type " + varHolder.getType() + " but instead got " + currentScope.typeOf(exprRes.get()));
                     return;
                 }
-                SCRIPT_CTX.getVariable(varName).get().setValue(exprRes.get());
+                currentScope.getVariable(varName).get().setValue(exprRes.get());
 
-            }else if(Token.LET_KW.equals(left.getToken())){
+            } else if (Token.LET_KW.equals(left.getToken())) {
                 String varName = left.left().getToken().getLiteral();
                 Token type = left.right() != null ? left.right().getToken() : null;
 
-                if(SCRIPT_CTX.getVariable(varName).isPresent()){
-                    System.err.println("Variable "+varName+" is already declared !");
+                if (currentScope.getVariable(varName).isPresent()) {
+                    System.err.println("Variable " + varName + " is already declared !");
                     return;
                 }
 
-                if(exprRes.isFailure()){
+                if (exprRes.isFailure()) {
                     System.err.println(exprRes.getMessage());
                     return;
                 }
 
-                if(type == null) {
-                    type = SCRIPT_CTX.typeOf(exprRes.get());
-                    if(Token.NULL_KW.equals(type)){
-                        System.err.println("Cannot infer type of variable "+varName);
+                if (type == null) {
+                    type = currentScope.typeOf(exprRes.get());
+                    if (Token.NULL_KW.equals(type)) {
+                        System.err.println("Cannot infer type of variable " + varName);
                         return;
                     }
                 }
 
 
-
-                if(!type.equals(SCRIPT_CTX.typeOf(exprRes.get())) && !Token.NULL_KW.equals(SCRIPT_CTX.typeOf(exprRes.get()))  ){
-                    System.err.println("Expected type "+type+" but instead got "+SCRIPT_CTX.typeOf(exprRes.get()));
+                if (!type.equals(currentScope.typeOf(exprRes.get())) && !Token.NULL_KW.equals(currentScope.typeOf(exprRes.get()))) {
+                    System.err.println("Expected type " + type + " but instead got " + currentScope.typeOf(exprRes.get()));
                     return;
                 }
 
-                SCRIPT_CTX.pushVariable(varName, type, exprRes.get());
+                currentScope.pushVariable(varName, type, exprRes.get());
 
+            }
+
+        }else if(Token.IF_KW.equals(node.getToken())){
+            Result<Token> exprRes = evaluator.evaluate(node.get(0));
+            if(exprRes.isFailure()) {
+                System.err.println(exprRes.getMessage());
+                return;
+            }
+
+            if(!Token.BOOL_KW.equals(currentScope.typeOf(exprRes.get()))){
+                System.err.println("Expected type "+ Token.BOOL_KW+" but instead got "+currentScope.typeOf(exprRes.get()));
+                return;
+            }
+
+            if("true".equals(exprRes.get().getLiteral())){
+                ASTNode body = node.get(1);
+                currentScope = currentScope.child();
+                evaluator.setScopeContext(currentScope);
+
+                execute(body.getChildren());
+
+                currentScope = currentScope.getParent();
+                evaluator.setScopeContext(currentScope);
+            }else if(node.get(2) != null){
+                ASTNode elseBody = node.get(2).get(0);
+                currentScope = currentScope.child();
+                evaluator.setScopeContext(currentScope);
+
+                execute(elseBody.getChildren());
+
+                currentScope = currentScope.getParent();
+                evaluator.setScopeContext(currentScope);
             }
         }else if(Token.FUNC.equals(node.getToken())){
             Result<Token> r = evaluator.evaluate(node);
@@ -126,31 +160,26 @@ public class Simpleton {
         return Result.success(res);
     }
 
+
     public Result<List<ASTNode>> buildTrees(List<Token> tokens){
 
         List<ASTNode> res = new ArrayList<>();
+        final TreeBuilder chain = new FullVariableInitialization(evaluator);
+        chain.next(new PartialVariableInitialization(evaluator, chain))
+                .next(new VariableDeclaration(chain))
+                .next(new VariableAssignment(evaluator, chain))
+                .next(new IfStructure(evaluator, chain))
+                .next(new StandaloneExpression(evaluator, chain));
 
         while(!tokens.isEmpty()){
 
-            int indexOfFirstEOL = tokens.indexOf(Token.EOL);
-            Result<ASTNode> declarationTree = buildVarDeclarationTree(tokens, false);
-            Result<ASTNode> assignmentTree = buildVarAssignmentTree(tokens);
+            TreeBuilderResult result = chain.build(tokens);
 
-
-            if(declarationTree.isSuccess()) {
-                res.add(declarationTree.get());
-                tokens = tokens.subList(indexOfFirstEOL+1, tokens.size());
-            }else if(assignmentTree.isSuccess()) {
-                res.add(assignmentTree.get());
-                tokens = tokens.subList(indexOfFirstEOL + 1, tokens.size());
-            }else {
-                Result<ASTNode> exprRes =  evaluator.buildTree(tokens.subList(0, indexOfFirstEOL));
-                if(exprRes.isFailure())
-                    return Result.failure(exprRes.getMessage());
-
-
-                res.add(exprRes.get());
-                tokens = tokens.subList(indexOfFirstEOL+1, tokens.size());
+            if(result.tree().isSuccess()){
+                res.add(result.tree().get());
+                tokens = tokens.subList(result.jumpIndex(), tokens.size());
+            }else{
+                return Result.failure(result.tree().getMessage());
             }
 
 
@@ -160,97 +189,8 @@ public class Simpleton {
         return Result.success(res);
     }
 
-    private Result<ASTNode> buildVarAssignmentTree(List<Token> tokens){
-        //Possible outcomes:
-        //a = expr
-        //let a = expr
-        //let a : type = expr
-        int indexOfFirstEOL = tokens.indexOf(Token.EOL);
 
-        if(match(tokens, "variable_name equals * eol")){
-            ASTNode root = new ASTNode(tokens.get(1));
-
-            //add left variable
-            root.addChild(new ASTNode(tokens.get(0)));
-
-            //add right expression
-            Result<ASTNode> res =  evaluator.buildTree(tokens.subList(2, indexOfFirstEOL));
-
-            if(res.isFailure())
-                return res;
-
-            root.addChild(res.get());
-
-            return Result.success(root);
-        }
-
-        if(match(tokens, "let_kw variable_name equals * eol")){
-            ASTNode root = new ASTNode(tokens.get(2));
-
-            Result<ASTNode> letTree = buildVarDeclarationTree(tokens.subList(0, 2), true);
-            Result<ASTNode> exprRes = evaluator.buildTree(tokens.subList(3, indexOfFirstEOL));
-
-            if(letTree.isFailure())
-                return letTree;
-            if(exprRes.isFailure())
-                return exprRes;
-
-            root.addChildren(letTree.get(), exprRes.get());
-
-            return Result.success(root);
-        }
-
-        if(match(tokens, "let_kw variable_name colon type equals * eol")){
-            ASTNode root = new ASTNode(tokens.get(4));
-
-            Result<ASTNode> letTree = buildVarDeclarationTree(tokens.subList(0, 4), true);
-            Result<ASTNode> exprRes = evaluator.buildTree(tokens.subList(5, indexOfFirstEOL));
-
-            if(letTree.isFailure())
-                return letTree;
-            if(exprRes.isFailure())
-                return exprRes;
-
-            root.addChildren(letTree.get(), exprRes.get());
-
-            return Result.success(root);
-        }
-
-        return Result.failure("Unable to process assigment");
-    }
-
-    private Result<ASTNode> buildVarDeclarationTree(List<Token> tokens, boolean fromAssignmentTreeBuilder){
-        //Possible outcomes:
-        //let a : type = expr   special case handled by varAssignmentTree tree builder
-        //let a = expr          special case handled by ----------------- tree builder
-        //let a : type
-        //let a                 special case, semantically wrong but handled here anyway to make it easier for the assignment tree builder
-
-        if(match(tokens, "let_kw variable_name colon type"+(fromAssignmentTreeBuilder ? "" : " eol") )) {
-            //let_kw { variable_name, type}
-            ASTNode root = new ASTNode(tokens.get(0));
-
-            var varName = new ASTNode(tokens.get(1));
-            var varType = new ASTNode(tokens.get(3));
-
-            root.addChildren(varName, varType);
-
-            return Result.success(root);
-        }
-
-        if(match(tokens, "let_kw variable_name") && fromAssignmentTreeBuilder){
-            ASTNode root = new ASTNode(tokens.get(0));
-            var varName = new ASTNode(tokens.get(1));
-
-            root.addChild(varName);
-
-            return Result.success(root);
-        }
-
-        return Result.failure("Unable to process declaration");
-    }
-
-    private static boolean match(List<Token> tokens, String statement){
+    public static boolean match(List<Token> tokens, String statement){
         String[] candidates = statement.split(" ");
         if(tokens.size() < candidates.length)
             return false;

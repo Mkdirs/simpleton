@@ -26,8 +26,8 @@ public abstract class Token {
 
         L_PAREN = add(new LParen()),
         R_PAREN = add(new RParen()),
-        L_BRACKET = new LBracket(),
-        R_BRACKET = new RBracket(),
+        L_BRACKET = add(new LBracket()),
+        R_BRACKET = add(new RBracket()),
         COLON = add(new Colon()),
         COMMA = add(new Comma()),
 
@@ -71,8 +71,9 @@ public abstract class Token {
         BOOL_KW = add(new BoolKW()),
         NULL_KW = add(new NullKW()),
         VOID_KW = new VoidKW(),
-        IF_KW = new IfKW(),
-        THEN_KW = new ThenKW(),
+        IF_KW = add(new IfKW()),
+        ELSE_KW = add(new ElseKW()),
+        THEN_KW = add(new ThenKW()),
 
         EOL = new EOL()
 

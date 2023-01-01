@@ -33,18 +33,27 @@ public class ASTNode {
         addChildren(List.of(nodes));
     }
 
+    public List<ASTNode> getChildren(){return Collections.unmodifiableList(children);}
+
+    public ASTNode get(int index){
+        if(index < 0 || index >= children.size())
+            return null;
+
+        return children.get(index);
+    }
+
     public ASTNode left() {
         if(children.isEmpty())
             return null;
 
-        return children.get(0);
+        return get(0);
     }
 
     public ASTNode right() {
         if(children.size() < 2)
             return null;
 
-        return children.get(1);
+        return get(1);
     }
 
     public boolean isLeaf(){return this.children.isEmpty();}
@@ -52,7 +61,7 @@ public class ASTNode {
     @Override
     public String toString() {
         if(isLeaf())
-            return token.toString();
+            return token == null ? "." : token.toString();
         else {
             return token.toString() + "{" + children.stream().map(ASTNode::toString)/*.collect(Collectors.joining())*/ + "}";
         }
