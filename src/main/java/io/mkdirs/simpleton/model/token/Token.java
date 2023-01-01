@@ -23,6 +23,7 @@ public abstract class Token {
         MINUS = add(new Minus()),
         STAR = add(new Star()),
         DIVIDE = add(new Divide()),
+        PERCENT = add(new Percent()),
 
         L_PAREN = add(new LParen()),
         R_PAREN = add(new RParen()),

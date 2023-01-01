@@ -7,8 +7,9 @@ It can run simple CLI programs.
 - [Variable Declaration](#variable-declaration)
 - [Variable Assignment](#variable-assignment)
 - [Operations](#operations)
+- [Control Structures](#control-structures)
 - [Functions](#functions)
-- [Example](#example)
+- [Example](#examples)
 
 # Variable Declaration
 
@@ -63,6 +64,9 @@ The operations supported on the types are:
   - ``float / float``
   - ``int / float`` (or ``float / int``)
 
+- ## ``%`` Modulo
+  - ``int % int`` will return the remainder of the division between two integer.
+
 - ## ``&&`` And
   - ``bool && bool``
 
@@ -106,6 +110,60 @@ The operations supported on the types are:
   - ``float <= float``
   - ``char <= char``
 
+# Control Structures
+
+- ## If branch
+The syntax for if block is simple:
+````
+if(expression) then {
+  ...
+  code
+  ...
+}
+````
+
+- ## Else branch
+Add an else branch to your if like this:
+````
+if(expression) then {
+  ...
+  code
+  ...
+}else do{
+  ...
+  code
+  ...
+}
+````
+
+- ## Else-If branch
+There is no keyword or special way to make else-if branches.\
+The way to simulate that is to nest an if branch in an else branch:
+````
+if(expression) then{
+  ...
+  code
+  ...
+} else do{
+  if(expression) then {
+    ...
+    code
+    ...
+  }
+}
+````
+
+- ## While loop
+The syntax is also very simple:
+````
+while(expression) do {
+  ...
+  code
+  ...
+}
+````
+
+
 # Functions
 
 Use the syntax below to call a function:\
@@ -119,13 +177,50 @@ This will print the value of _expression_ on the standard output.
 
 ``input(prompt)``\
 This will print _prompt_ on the standard output and return a value from the standard input.
-> Note:\
+> ***NOTE:***\
 > _prompt_ is a string and the function returns a string.
 
-# Example
+# Examples
 
+Hello world program
+````
+print("Hello world")
+````
+\
+\
+Greet the user
 ````
 let name = input("What is your name?: ")
 let greeting : string = "Hello "+name+" !"
 print(greeting)
+````
+\
+\
+FizzBuzz
+````
+let number = 1
+let msg:string
+while(number <= 10) do{
+  msg = ""
+  
+  if(number % 3 == 0) then {
+    msg = "Fizz"
+  }else do{
+    if(number % 5 == 0) then {
+      msg = "Buzz"
+    }
+  }
+
+  if(number % 15 == 0) then {
+    msg = "FizzBuzz"
+  }
+
+  if(msg == "") then {
+    print(number)
+  }else do {
+    print(msg)
+  }
+
+  number = number+1
+}
 ````

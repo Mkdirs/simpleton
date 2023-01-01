@@ -112,6 +112,15 @@ public class Operator {
 
 
 
+            new Operator(Token.PERCENT, 4)
+                    .acceptTypes(Operand.with(Token.INTEGER_LITERAL), Operand.with(Token.INTEGER_LITERAL), (a, b) -> {
+                        return new IntegerLiteral(String.valueOf(Integer.parseInt(a.getLiteral()) % Integer.parseInt(b.getLiteral())));
+            }),
+
+
+
+
+
             new Operator(Token.OR, 3)
                     .acceptTypes(Operand.with(Token.BOOLEAN_LITERAL), Operand.with(Token.BOOLEAN_LITERAL), (a,b) -> {
                         return new BooleanLiteral(String.valueOf(Boolean.parseBoolean(a.getLiteral()) || Boolean.parseBoolean(b.getLiteral())));
