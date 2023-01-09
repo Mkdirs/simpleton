@@ -5,10 +5,7 @@ import io.mkdirs.simpleton.func_executor.NativeFuncExecutor;
 import io.mkdirs.simpleton.model.token.Token;
 import io.mkdirs.simpleton.model.token.composite.Func;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class ScopeContext {
 
@@ -26,14 +23,14 @@ public class ScopeContext {
         this.parent = parent;
         this.id = id;
 
-        pushFunctionSign(new FuncSignature("print", new Token[]{Token.STRING_LITERAL}));
-        pushFunctionSign(new FuncSignature("print", new Token[]{Token.CHARACTER_LITERAL}));
-        pushFunctionSign(new FuncSignature("print", new Token[]{Token.INTEGER_LITERAL}));
-        pushFunctionSign(new FuncSignature("print", new Token[]{Token.FLOAT_LITERAL}));
-        pushFunctionSign(new FuncSignature("print", new Token[]{Token.BOOLEAN_LITERAL}));
+        pushFunctionSign(new FuncSignature("print", Map.of("object", Token.STRING_LITERAL)));
+        pushFunctionSign(new FuncSignature("print", Map.of("object", Token.CHARACTER_LITERAL)));
+        pushFunctionSign(new FuncSignature("print", Map.of("object", Token.INTEGER_LITERAL)));
+        pushFunctionSign(new FuncSignature("print", Map.of("object", Token.FLOAT_LITERAL)));
+        pushFunctionSign(new FuncSignature("print", Map.of("object", Token.BOOLEAN_LITERAL)));
 
 
-        pushFunctionSign(new FuncSignature("input", new Token[]{Token.STRING_LITERAL}, Token.STRING_LITERAL));
+        pushFunctionSign(new FuncSignature("input", Map.of("prompt", Token.STRING_LITERAL), Token.STRING_LITERAL));
     }
 
     public ScopeContext(){this(null, 0);}

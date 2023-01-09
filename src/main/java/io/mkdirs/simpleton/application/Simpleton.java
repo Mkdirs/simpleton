@@ -3,15 +3,18 @@ package io.mkdirs.simpleton.application;
 import io.mkdirs.simpleton.evaluator.ASTNode;
 import io.mkdirs.simpleton.evaluator.ExpressionEvaluator;
 import io.mkdirs.simpleton.forest_builder.*;
+import io.mkdirs.simpleton.forest_builder.structure.FunctionStructure;
 import io.mkdirs.simpleton.forest_builder.structure.IfStructure;
 import io.mkdirs.simpleton.forest_builder.structure.WhileStructure;
 import io.mkdirs.simpleton.lexer.Lexer;
 import io.mkdirs.simpleton.model.token.Token;
 import io.mkdirs.simpleton.result.Result;
+import io.mkdirs.simpleton.scope.FuncSignature;
 import io.mkdirs.simpleton.scope.ScopeContext;
 import io.mkdirs.simpleton.scope.VariableHolder;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Simpleton {
 
@@ -122,7 +125,7 @@ public class Simpleton {
                 evaluator.setScopeContext(currentScope);
             }
 
-        }else if(Token.WHILE_KW.equals(node.getToken())){
+        }else if(Token.WHILE_KW.equals(node.getToken())) {
 
             Result<Token> exprRes = evaluator.evaluate(node.get(0));
             if (exprRes.isFailure()) {
@@ -138,12 +141,11 @@ public class Simpleton {
             ASTNode body = node.get(1);
 
 
-
-            while("true".equals(exprRes.get().getLiteral())){
+            while ("true".equals(exprRes.get().getLiteral())) {
 
                 var result = execute(body.getChildren());
 
-                if(result.isFailure())
+                if (result.isFailure())
                     return result;
 
 
@@ -162,6 +164,27 @@ public class Simpleton {
             currentScope = currentScope.getParent();
             evaluator.setScopeContext(currentScope);
 
+
+        }else if(Token.DEF_KW.equals(node.getToken())){
+
+            if(Token.FUNCTION_KW.equals(node.get(0))){
+                ASTNode function = node.get(0);
+                String name = function.get(0).getToken().getLiteral();
+                List<Map.Entry<String, Token>> entries = function.getChildren().subList(1, function.getChildren().size()-2).stream()
+                        .map(n -> Map.entry(n.getToken().getLiteral(), n.get(0).getToken()))
+                        .collect(Collectors.toList());
+
+                HashMap<String, Token> params = new HashMap<>();
+                for(Map.Entry<String, Token> entry : entries){
+                    params.put(entry.getKey(), entry.getValue());
+                }
+
+                Token returnType = function.get(function.getChildren().size()-2).getToken();
+                //Add location
+                FuncSignature funcSign = new FuncSignature(name, params, returnType);
+
+                currentScope.pushFunctionSign(funcSign);
+            }
 
         }else if(Token.FUNC.equals(node.getToken())){
             Result<Token> r = evaluator.evaluate(node);
@@ -214,6 +237,7 @@ public class Simpleton {
                 .next(new VariableAssignment(evaluator, chain))
                 .next(new IfStructure(evaluator, chain))
                 .next(new WhileStructure(evaluator, chain))
+                .next(new FunctionStructure())
                 .next(new StandaloneExpression(evaluator, chain));
 
         while(!tokens.isEmpty()){
