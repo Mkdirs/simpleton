@@ -7,9 +7,11 @@ import io.mkdirs.simpleton.forest_builder.structure.FunctionStructure;
 import io.mkdirs.simpleton.forest_builder.structure.IfStructure;
 import io.mkdirs.simpleton.forest_builder.structure.WhileStructure;
 import io.mkdirs.simpleton.lexer.Lexer;
+import io.mkdirs.simpleton.model.Type;
 import io.mkdirs.simpleton.model.token.Token;
 import io.mkdirs.simpleton.result.Result;
 import io.mkdirs.simpleton.scope.FuncSignature;
+import io.mkdirs.simpleton.scope.Location;
 import io.mkdirs.simpleton.scope.ScopeContext;
 import io.mkdirs.simpleton.scope.VariableHolder;
 
@@ -18,25 +20,41 @@ import java.util.stream.Collectors;
 
 public class Simpleton {
 
-    private final ScopeContext SCRIPT_CTX = new ScopeContext();
-    private ScopeContext currentScope = SCRIPT_CTX;
-    private final ExpressionEvaluator evaluator = new ExpressionEvaluator(currentScope);
+    private final ScopeContext SCRIPT_CTX;
+    private ScopeContext currentScope;
+    private final ExpressionEvaluator evaluator;
+
+    public Simpleton(ScopeContext ctx){
+        SCRIPT_CTX = ctx;
+        currentScope = SCRIPT_CTX;
+        evaluator = new ExpressionEvaluator(currentScope);
+    }
+
+    public Simpleton(){
+        this(new ScopeContext());
+    }
 
 
     public Result execute(List<ASTNode> nodes){
+        Result lastResult = null;
+
         for(ASTNode node : nodes){
-            var result = execute(node);
-            if(result.isFailure())
-                return result;
+            lastResult = execute(node);
+
+            if(lastResult.isFailure())
+                return lastResult;
         }
 
-        return Result.success(null);
+        if(lastResult == null)
+            return Result.success(Token.VOID_KW);
+
+        return lastResult;
     }
 
     private Result execute(ASTNode node){
         if(Token.LET_KW.equals(node.getToken())){
             String varName = node.left().getToken().getLiteral();
-            Token type = node.right().getToken();
+            Type type = Type.typeOf(node.right().getToken());
             if(currentScope.getVariable(varName).isPresent()){
                 return Result.failure("Variable "+varName+" is already declared !");
             }
@@ -57,14 +75,14 @@ public class Simpleton {
                 }
 
                 VariableHolder varHolder = currentScope.getVariable(varName).get();
-                if (!varHolder.getType().equals(currentScope.typeOf(exprRes.get())) && !Token.NULL_KW.equals(currentScope.typeOf(exprRes.get()))) {
-                    return Result.failure("Expected type " + varHolder.getType() + " but instead got " + currentScope.typeOf(exprRes.get()));
+                if (!varHolder.getType().equals(Type.typeOf(exprRes.get())) && !Token.NULL_KW.equals(Type.typeOf(exprRes.get()))) {
+                    return Result.failure("Expected type " + varHolder.getType() + " but instead got " + Type.typeOf(exprRes.get()));
                 }
                 currentScope.getVariable(varName).get().setValue(exprRes.get());
 
             } else if (Token.LET_KW.equals(left.getToken())) {
                 String varName = left.left().getToken().getLiteral();
-                Token type = left.right() != null ? left.right().getToken() : null;
+                Type type = left.right() != null ? Type.typeOf(left.right().getToken()) : null;
 
                 if (currentScope.getVariable(varName).isPresent()) {
                     return Result.failure("Variable " + varName + " is already declared !");
@@ -75,15 +93,15 @@ public class Simpleton {
                 }
 
                 if (type == null) {
-                    type = currentScope.typeOf(exprRes.get());
-                    if (Token.NULL_KW.equals(type)) {
+                    type = Type.typeOf(exprRes.get());
+                    if (Type.NULL.equals(type)) {
                         return Result.failure("Cannot infer type of variable " + varName);
                     }
                 }
 
 
-                if (!type.equals(currentScope.typeOf(exprRes.get())) && !Token.NULL_KW.equals(currentScope.typeOf(exprRes.get()))) {
-                    return Result.failure("Expected type " + type + " but instead got " + currentScope.typeOf(exprRes.get()));
+                if (!type.equals(Type.typeOf(exprRes.get())) && !Type.NULL.equals(Type.typeOf(exprRes.get()))) {
+                    return Result.failure("Expected type " + type + " but instead got " + Type.typeOf(exprRes.get()));
                 }
 
                 currentScope.pushVariable(varName, type, exprRes.get());
@@ -96,8 +114,8 @@ public class Simpleton {
                 return Result.failure(exprRes.getMessage());
             }
 
-            if (!Token.BOOL_KW.equals(currentScope.typeOf(exprRes.get()))) {
-                return Result.failure("Expected type " + Token.BOOL_KW + " but instead got " + currentScope.typeOf(exprRes.get()));
+            if (!Type.BOOLEAN.equals(Type.typeOf(exprRes.get()))) {
+                return Result.failure("Expected type " + Type.BOOLEAN + " but instead got " + Type.typeOf(exprRes.get()));
             }
 
             if ("true".equals(exprRes.get().getLiteral())) {
@@ -132,8 +150,8 @@ public class Simpleton {
                 return Result.failure(exprRes.getMessage());
             }
 
-            if (!Token.BOOL_KW.equals(currentScope.typeOf(exprRes.get()))) {
-                return Result.failure("Expected type " + Token.BOOL_KW + " but instead got " + currentScope.typeOf(exprRes.get()));
+            if (!Type.BOOLEAN.equals(Type.typeOf(exprRes.get()))) {
+                return Result.failure("Expected type " + Type.BOOLEAN + " but instead got " + Type.typeOf(exprRes.get()));
             }
 
             currentScope = currentScope.child();
@@ -154,8 +172,8 @@ public class Simpleton {
                     return Result.failure(exprRes.getMessage());
                 }
 
-                if (!Token.BOOL_KW.equals(currentScope.typeOf(exprRes.get()))) {
-                    return Result.failure("Expected type " + Token.BOOL_KW + " but instead got " + currentScope.typeOf(exprRes.get()));
+                if (!Type.BOOLEAN.equals(Type.typeOf(exprRes.get()))) {
+                    return Result.failure("Expected type " + Type.BOOLEAN + " but instead got " + Type.typeOf(exprRes.get()));
                 }
 
             }
@@ -165,34 +183,43 @@ public class Simpleton {
             evaluator.setScopeContext(currentScope);
 
 
-        }else if(Token.DEF_KW.equals(node.getToken())){
+        }else if(Token.DEF_KW.equals(node.getToken())) {
 
-            if(Token.FUNCTION_KW.equals(node.get(0))){
+            if (Token.FUNCTION_KW.equals(node.get(0).getToken())) {
                 ASTNode function = node.get(0);
                 String name = function.get(0).getToken().getLiteral();
-                List<Map.Entry<String, Token>> entries = function.getChildren().subList(1, function.getChildren().size()-2).stream()
-                        .map(n -> Map.entry(n.getToken().getLiteral(), n.get(0).getToken()))
+                List<Map.Entry<String, Type>> entries = function.getChildren().subList(1, function.getChildren().size() - 2).stream()
+                        .map(n -> Map.entry(n.getToken().getLiteral(), Type.typeOf(n.get(0).getToken())))
                         .collect(Collectors.toList());
 
-                HashMap<String, Token> params = new HashMap<>();
-                for(Map.Entry<String, Token> entry : entries){
+                HashMap<String, Type> params = new HashMap<>();
+                for (Map.Entry<String, Type> entry : entries) {
                     params.put(entry.getKey(), entry.getValue());
                 }
 
-                Token returnType = function.get(function.getChildren().size()-2).getToken();
-                //Add location
-                FuncSignature funcSign = new FuncSignature(name, params, returnType);
+                Type returnType = Type.typeOf(function.get(function.getChildren().size() - 2).getToken());
+
+                Location location = new Location(function.get(function.getChildren().size()-1));
+
+                FuncSignature funcSign = new FuncSignature(name, params, returnType, location);
+
+                if(currentScope.hasFunctionSign(funcSign))
+                    return Result.failure("Function "+funcSign+" is already declared !");
 
                 currentScope.pushFunctionSign(funcSign);
             }
+
+        }else if(Token.RETURN_KW.equals(node.getToken())){
+            return Result.success(node.get(0).getToken());
 
         }else if(Token.FUNC.equals(node.getToken())){
             Result<Token> r = evaluator.evaluate(node);
             if(r.isFailure())
                 return r;
+
         }
 
-        return Result.success(null);
+        return Result.success(Token.VOID_KW);
     }
 
 
@@ -237,7 +264,8 @@ public class Simpleton {
                 .next(new VariableAssignment(evaluator, chain))
                 .next(new IfStructure(evaluator, chain))
                 .next(new WhileStructure(evaluator, chain))
-                .next(new FunctionStructure())
+                .next(new FunctionStructure(chain))
+                .next(new ReturnInstruction(evaluator, chain))
                 .next(new StandaloneExpression(evaluator, chain));
 
         while(!tokens.isEmpty()){

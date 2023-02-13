@@ -2,17 +2,19 @@ package io.mkdirs.simpleton.scope;
 
 import io.mkdirs.simpleton.func_executor.IFuncExecutor;
 import io.mkdirs.simpleton.func_executor.NativeFuncExecutor;
+import io.mkdirs.simpleton.model.Type;
 import io.mkdirs.simpleton.model.token.Token;
 import io.mkdirs.simpleton.model.token.composite.Func;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class ScopeContext {
 
     private final ScopeContext parent;
     private final int id;
     private final HashMap<String, VariableHolder> variables = new HashMap<>();
-    private final List<FuncSignature> functions = new ArrayList<>();
+    private final List<FuncSignature> functions = new LinkedList<>();
 
     private final IFuncExecutor nativeFuncExecutor = new NativeFuncExecutor();
 
@@ -23,14 +25,14 @@ public class ScopeContext {
         this.parent = parent;
         this.id = id;
 
-        pushFunctionSign(new FuncSignature("print", Map.of("object", Token.STRING_LITERAL)));
-        pushFunctionSign(new FuncSignature("print", Map.of("object", Token.CHARACTER_LITERAL)));
-        pushFunctionSign(new FuncSignature("print", Map.of("object", Token.INTEGER_LITERAL)));
-        pushFunctionSign(new FuncSignature("print", Map.of("object", Token.FLOAT_LITERAL)));
-        pushFunctionSign(new FuncSignature("print", Map.of("object", Token.BOOLEAN_LITERAL)));
+        pushFunctionSign(new FuncSignature("print", Map.of("object", Type.STRING)));
+        pushFunctionSign(new FuncSignature("print", Map.of("object", Type.CHARACTER)));
+        pushFunctionSign(new FuncSignature("print", Map.of("object", Type.INTEGER)));
+        pushFunctionSign(new FuncSignature("print", Map.of("object", Type.FLOAT)));
+        pushFunctionSign(new FuncSignature("print", Map.of("object", Type.BOOLEAN)));
 
 
-        pushFunctionSign(new FuncSignature("input", Map.of("prompt", Token.STRING_LITERAL), Token.STRING_LITERAL));
+        pushFunctionSign(new FuncSignature("input", Map.of("prompt", Type.STRING), Type.STRING));
     }
 
     public ScopeContext(){this(null, 0);}
@@ -60,6 +62,10 @@ public class ScopeContext {
         this.functions.add(signature);
     }
 
+    public boolean hasFunctionSign(FuncSignature signature){
+        return this.functions.contains(signature);
+    }
+
     public Optional<FuncSignature> getFunctionSign(Func func) throws IllegalStateException{
         if(!func.areArgsComputed())
             throw new IllegalStateException("Function "+func+" has not computed its arguments !");
@@ -77,12 +83,12 @@ public class ScopeContext {
         return Optional.empty();
     }
 
-    public void pushVariable(String name, Token type, Token value){
+    public void pushVariable(String name, Type type, Token value){
         this.variables.put(name, new VariableHolder(type, value));
     }
 
 
-    public void pushVariable(String name, Token type){
+    public void pushVariable(String name, Type type){
         this.variables.put(name, new VariableHolder(type));
     }
 
@@ -95,23 +101,6 @@ public class ScopeContext {
             return this.parent.getVariable(name);
 
         return Optional.empty();
-    }
-
-    public Token typeOf(Token value){
-        if(Token.INTEGER_LITERAL.equals(value))
-            return Token.INT_KW;
-        else if(Token.FLOAT_LITERAL.equals(value))
-            return Token.FLOAT_KW;
-        else if(Token.STRING_LITERAL.equals(value))
-            return Token.STRING_KW;
-        else if(Token.CHARACTER_LITERAL.equals(value))
-            return Token.CHAR_KW;
-        else if(Token.BOOLEAN_LITERAL.equals(value))
-            return Token.BOOL_KW;
-        else if(Token.NULL_KW.equals(value))
-            return Token.NULL_KW;
-
-        return null;
     }
 
     @Override

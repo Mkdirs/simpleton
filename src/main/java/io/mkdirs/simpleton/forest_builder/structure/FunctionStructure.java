@@ -6,9 +6,12 @@ import io.mkdirs.simpleton.evaluator.ExpressionEvaluator;
 import io.mkdirs.simpleton.forest_builder.TreeBuilder;
 import io.mkdirs.simpleton.forest_builder.TreeBuilderResult;
 import io.mkdirs.simpleton.model.token.Token;
+import io.mkdirs.simpleton.model.token.composite.Func;
+import io.mkdirs.simpleton.model.token.composite.VariableName;
 import io.mkdirs.simpleton.result.Result;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class FunctionStructure extends AbstractStructure {
 
@@ -24,31 +27,34 @@ public class FunctionStructure extends AbstractStructure {
 
     @Override
     protected boolean isValid(List<Token> tokens) {
-        return Simpleton.match(tokens, "def_kw function_kw variable_name left_parenthesis * right_parenthesis colon type do_kw left_bracket eol");
+        return (
+                Simpleton.match(tokens, "def_kw function_kw func colon type do_kw left_bracket eol")
+                || Simpleton.match(tokens, "def_kw function_kw func colon void_kw do_kw left_bracket eol")
+        );
     }
 
     private boolean validParams(List<Token> params){
-        /*if(!Token.VARIABLE_NAME.equals(params.get(0)) || !"TYPE".equals(params.get(params.size()-1).group()))
-            return false;
-
-         */
+        if(params.isEmpty())
+            return true;
 
         Token expectedToken = Token.VARIABLE_NAME;
         boolean expectType = false;
         boolean loop = true;
         int i = 0;
+
         while(loop && i < params.size()){
             Token token = params.get(i);
+
 
             if(expectedToken.equals(token) && !expectType) {
                 if (Token.VARIABLE_NAME.equals(token)) {
                     expectedToken = Token.COLON;
                 } else if (Token.COLON.equals(token)) {
                     expectType = true;
-                } else if(Token.COMMA.equals(token)){
+                } else if (Token.COMMA.equals(token)) {
                     expectedToken = Token.VARIABLE_NAME;
                 }
-            }else if("TYPE".equals(token.group()) && expectType){
+            }else if("TYPE".equals(token.group()) && expectType) {
                 expectType = false;
                 expectedToken = Token.COMMA;
             }else{
@@ -56,6 +62,9 @@ public class FunctionStructure extends AbstractStructure {
             }
             i++;
         }
+
+        if(! "TYPE".equals(params.get(i-1).group()))
+            return false;
 
         return loop;
     }
@@ -66,18 +75,24 @@ public class FunctionStructure extends AbstractStructure {
             return super.build(tokens);
 
         ASTNode root = new ASTNode(Token.DEF_KW);
+        Func func = (Func) tokens.get(2);
 
-        var params = tokens.subList(4, tokens.indexOf(Token.R_PAREN));
+
+        var params = func.getBody().subList(1, func.getBody().size()-1);//tokens.subList(4, tokens.indexOf(Token.R_PAREN));
         if(!validParams(params))
             return new TreeBuilderResult(Result.failure("Cannot resolve function parameters"), 0);
 
         ASTNode function = new ASTNode(Token.FUNCTION_KW);
+
         //Add the name
-        function.addChild(new ASTNode(tokens.get(2)));
+        function.addChild(new ASTNode(new VariableName(func.getLiteral())));
 
         //Add the parameters
         Token name = null;
         for(Token token : params){
+            if(Token.L_PAREN.equals(token) || Token.R_PAREN.equals(token))
+                continue;
+
             if(Token.VARIABLE_NAME.equals(token)){
                 name = token;
             }else if("TYPE".equals(token.group())){
@@ -90,7 +105,8 @@ public class FunctionStructure extends AbstractStructure {
 
         //Add the return type
         int indexOfColon = tokens.indexOf(Token.COLON);
-        function.addChild(new ASTNode(tokens.get(indexOfColon+1)));
+        Token returnType = tokens.get(indexOfColon+1);
+        function.addChild(new ASTNode(returnType));
 
 
         //Add the body of the function
@@ -98,11 +114,19 @@ public class FunctionStructure extends AbstractStructure {
         int jmp = indexOfEOL+1;
         TreeBuilderResult bodyResult = buildBody(tokens.subList(jmp, tokens.size()));
 
+
         if(bodyResult.tree().isFailure())
             return bodyResult;
 
+        ASTNode body = bodyResult.tree().get();
+
+        if(!Token.VOID_KW.equals(returnType) && !Token.RETURN_KW.equals(body.get(body.getChildren().size()-1).getToken())){
+            return new TreeBuilderResult(Result.failure("Expected a return statement"), 0);
+        }
+
+
         jmp += bodyResult.jumpIndex();
-        function.addChildren(bodyResult.tree().get());
+        function.addChild(body);
 
         root.addChild(function);
 

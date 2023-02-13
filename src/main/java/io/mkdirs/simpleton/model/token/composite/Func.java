@@ -2,8 +2,10 @@ package io.mkdirs.simpleton.model.token.composite;
 
 import io.mkdirs.simpleton.evaluator.ASTNode;
 import io.mkdirs.simpleton.evaluator.ExpressionEvaluator;
+import io.mkdirs.simpleton.model.Type;
 import io.mkdirs.simpleton.model.token.Token;
 import io.mkdirs.simpleton.result.Result;
+import io.mkdirs.simpleton.scope.ScopeContext;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -125,7 +127,7 @@ public class Func extends Token {
 
     @Override
     public String toText() {
-        String argsStr = String.join(",", args.stream().map(Token::getLiteral).toList());
+        String argsStr = String.join(",", args.stream().map(Type::typeOf).map(Type::name).toList());
         return literal+"("+argsStr+")";
     }
 }

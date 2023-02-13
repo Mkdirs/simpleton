@@ -71,7 +71,7 @@ public abstract class Token {
         CHAR_KW = add(new CharKW()),
         BOOL_KW = add(new BoolKW()),
         NULL_KW = add(new NullKW()),
-        VOID_KW = new VoidKW(),
+        VOID_KW = add(new VoidKW()),
         IF_KW = add(new IfKW()),
         ELSE_KW = add(new ElseKW()),
         THEN_KW = add(new ThenKW()),
@@ -79,6 +79,7 @@ public abstract class Token {
         DO_KW = add(new DoKW()),
         DEF_KW = add(new DefKW()),
         FUNCTION_KW = add(new FunctionKW()),
+        RETURN_KW = add(new ReturnKW()),
 
         EOL = new EOL()
 

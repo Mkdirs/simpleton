@@ -1,11 +1,14 @@
 package io.mkdirs.simpleton.evaluator;
 
+import io.mkdirs.simpleton.application.Simpleton;
 import io.mkdirs.simpleton.evaluator.operator.Operator;
+import io.mkdirs.simpleton.model.Type;
 import io.mkdirs.simpleton.model.token.Token;
 import io.mkdirs.simpleton.model.token.composite.Func;
 import io.mkdirs.simpleton.result.Result;
 import io.mkdirs.simpleton.result.ResultProvider;
 import io.mkdirs.simpleton.scope.FuncSignature;
+import io.mkdirs.simpleton.scope.Location;
 import io.mkdirs.simpleton.scope.ScopeContext;
 import io.mkdirs.simpleton.scope.VariableHolder;
 
@@ -37,36 +40,57 @@ public class ExpressionEvaluator extends ResultProvider {
                 return Result.success(var.getValue());
 
             }else if(Token.FUNC.equals(token)){
-                Result funcRes = ((Func) token).computeArgs(this);
+                Func func = (Func) token;
+                Result funcRes = func.computeArgs(this);
 
                 if(funcRes.isFailure())
                     return funcRes;
 
-                FuncSignature signature = this.scopeContext.getFunctionSign((Func) token).orElse(null);
+
+
+                FuncSignature signature = this.scopeContext.getFunctionSign(func).orElse(null);
 
                 if(signature == null)
-                    return Result.failure("Function '"+((Func) token)+"' does not exist");
+                    return Result.failure("Function '"+(func.toText())+"' does not exist");
 
                 if(assignVariable && Token.VOID_KW.equals(signature.getReturnType()))
                     return Result.failure("No value returned !");
 
-                switch (signature.getLocation()){
-                    case -1:
-                        Result<Token> r = this.scopeContext.getNativeFuncExecutor().execute((Func) token);
-                        if(r.isFailure())
-                            return r;
-
-                        if(!signature.getReturnType().equals(r.get()))
-                            return Result.failure("Unexpected error: "+token+" should return '"+signature.getReturnType()+"' but instead returned '"+r.get()+"'");
+                if(Location.BUILTINS == signature.getLocation()){
+                    Result<Token> r = this.scopeContext.getNativeFuncExecutor().execute(func);
+                    if(r.isFailure())
+                        return r;
 
 
+                    if(!signature.getReturnType().equals(Type.typeOf(r.get())))
+                        return Result.failure("Unexpected error: "+token.toText()+" should return '"+signature.getReturnType().name()+"' but instead returned '"+r.get()+"'");
 
-                        return Result.success(r.get());
+                    return Result.success(r.get());
+                }else{
+                    ScopeContext other = this.scopeContext.child();
+                    int i = 0;
+                    for(Map.Entry<String, Type> entry : signature.getArgs().entrySet()){
+                        other.pushVariable(entry.getKey(), entry.getValue(), func.getArgs().get(i));
+                        i++;
+                    }
 
-                    default:
-                        //TODO: implement
-                        break;
+
+                    Simpleton simpleton = new Simpleton(other);
+                    ASTNode body = signature.getLocation().getBody();
+                    Result r = simpleton.execute(body.getChildren());
+
+                    if(r.isFailure())
+                        return r;
+
+                    Token tok = (Token) r.get();
+                    if(!signature.getReturnType().equals(Type.typeOf(tok)))
+                        return Result.failure("Unexpected error: "+token.toText()+" should return '"+signature.getReturnType().name()+"' but instead returned '"+tok+"'");
+
+
+                    return Result.success(tok);
                 }
+
+
             }
             return Result.success(tree.getToken());
         }
