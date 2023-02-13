@@ -34,12 +34,8 @@ public class ReturnInstruction extends TreeBuilder{
         if(res.isFailure())
             return new TreeBuilderResult(res, 0);
 
-        Result<Token> val = evaluator.evaluate(res.get());
 
-        if(val.isFailure())
-            return new TreeBuilderResult(Result.failure(val.getMessage()), 0);
-
-        root.addChild(new ASTNode(val.get()));
+        root.addChild(res.get());
 
 
 

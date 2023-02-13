@@ -74,7 +74,6 @@ public class ExpressionEvaluator extends ResultProvider {
                         i++;
                     }
 
-
                     Simpleton simpleton = new Simpleton(other);
                     ASTNode body = signature.getLocation().getBody();
                     Result r = simpleton.execute(body.getChildren());

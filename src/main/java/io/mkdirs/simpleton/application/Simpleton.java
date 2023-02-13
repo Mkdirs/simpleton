@@ -210,7 +210,11 @@ public class Simpleton {
             }
 
         }else if(Token.RETURN_KW.equals(node.getToken())){
-            return Result.success(node.get(0).getToken());
+            Result<Token> res = evaluator.evaluate(node.get(0));
+            if(res.isFailure())
+                return res;
+
+            return Result.success(res.get());
 
         }else if(Token.FUNC.equals(node.getToken())){
             Result<Token> r = evaluator.evaluate(node);
