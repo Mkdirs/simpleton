@@ -165,7 +165,7 @@ public class Simpleton {
 
                 result = execute(body.getChildren());
 
-                if (result.isFailure())
+                if (result.isFailure() || result.isTerminative())
                     return result;
 
 
