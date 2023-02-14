@@ -166,11 +166,41 @@ while(expression) do {
 
 # Functions
 
+To declare a function you must follow this syntax:
+````
+def function name(param1:type, param2:type...) : return_type do {
+  ...
+  code
+  ...
+  return value
+}
+````
+If your function returns nothing, put **void** as the return type.
+
+
+Example: a function that compares 2 integers.
+
+````
+def function compare(a:int, b:int) : int do{
+  if(a < b) then{
+    return -1
+  }else{
+    if(a > b) then {
+      return 1
+    }else{
+      return 0
+    }
+  }
+}
+````
+
 Use the syntax below to call a function:\
 ``name(arg1, arg2, ..., argn)``
 
-The language doesn't support functions declaration for the moment.\
-But it provides built-in functions you can already use such as:
+Example:\
+``compare(10, 20)``
+
+Some built-in functions are provided:
 
 ``print(expression)``\
 This will print the value of _expression_ on the standard output.
