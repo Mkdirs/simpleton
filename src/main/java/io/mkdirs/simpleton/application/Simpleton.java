@@ -41,10 +41,7 @@ public class Simpleton {
         for(ASTNode node : nodes){
             lastResult = execute(node);
 
-            if(lastResult.isFailure())
-                return lastResult;
-
-            if(lastResult.isTerminative())
+            if(lastResult.isFailure() || lastResult.isTerminative())
                 return lastResult;
         }
 
@@ -215,7 +212,12 @@ public class Simpleton {
             }
 
         }else if(Token.RETURN_KW.equals(node.getToken())){
-            var res = evaluator.evaluate(node.get(0));
+            Result res;
+            if(node.isLeaf()){
+                res = Result.success(Token.VOID_KW);
+            }else{
+                res = evaluator.evaluate(node.get(0));
+            }
             res.setTerminative();
 
             return res;

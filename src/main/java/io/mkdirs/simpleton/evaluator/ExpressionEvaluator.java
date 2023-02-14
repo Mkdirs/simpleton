@@ -63,7 +63,7 @@ public class ExpressionEvaluator extends ResultProvider {
 
 
                     if(!signature.getReturnType().equals(Type.typeOf(r.get())))
-                        return Result.failure("Unexpected error: "+token.toText()+" should return '"+signature.getReturnType().name()+"' but instead returned '"+r.get()+"'");
+                        return Result.failure("Unexpected error: "+token.toText()+" should return '"+signature.getReturnType().name()+"' but instead returned '"+Type.typeOf(r.get())+"'");
 
                     return Result.success(r.get());
                 }else{
@@ -83,7 +83,7 @@ public class ExpressionEvaluator extends ResultProvider {
 
                     Token tok = (Token) r.get();
                     if(!signature.getReturnType().equals(Type.typeOf(tok)))
-                        return Result.failure("Unexpected error: "+token.toText()+" should return '"+signature.getReturnType().name()+"' but instead returned '"+tok+"'");
+                        return Result.failure("Unexpected error: "+token.toText()+" should return '"+signature.getReturnType().name()+"' but instead returned '"+Type.typeOf(tok)+"'");
 
 
                     return Result.success(tok);

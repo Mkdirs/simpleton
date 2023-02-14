@@ -29,13 +29,15 @@ public class ReturnInstruction extends TreeBuilder{
         ASTNode root = new ASTNode(Token.RETURN_KW);
         int indexOfEOL = tokens.indexOf(Token.EOL);
 
-        Result<ASTNode> res = evaluator.buildTree(tokens.subList(1, indexOfEOL));
+        if(!Token.EOL.equals(tokens.get(1))){
+            Result<ASTNode> res = evaluator.buildTree(tokens.subList(1, indexOfEOL));
 
-        if(res.isFailure())
-            return new TreeBuilderResult(res, 0);
+            if(res.isFailure())
+                return new TreeBuilderResult(res, 0);
 
 
-        root.addChild(res.get());
+            root.addChild(res.get());
+        }
 
 
 
