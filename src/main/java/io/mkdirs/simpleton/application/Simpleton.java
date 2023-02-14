@@ -194,7 +194,7 @@ public class Simpleton {
                         .map(n -> Map.entry(n.getToken().getLiteral(), Type.typeOf(n.get(0).getToken())))
                         .collect(Collectors.toList());
 
-                HashMap<String, Type> params = new HashMap<>();
+                Map<String, Type> params = new LinkedHashMap<>();
                 for (Map.Entry<String, Type> entry : entries) {
                     params.put(entry.getKey(), entry.getValue());
                 }

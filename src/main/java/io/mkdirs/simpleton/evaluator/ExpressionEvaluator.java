@@ -13,6 +13,7 @@ import io.mkdirs.simpleton.scope.ScopeContext;
 import io.mkdirs.simpleton.scope.VariableHolder;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class ExpressionEvaluator extends ResultProvider {
 

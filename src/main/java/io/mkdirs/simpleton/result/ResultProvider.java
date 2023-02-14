@@ -9,6 +9,7 @@ public abstract class ResultProvider {
 
 
     public void setStatement(String statement){this.statement = statement;}
+    //TODO: Give the String statement to the ExpressionEvaluator
 
     public Result pushError(String message, int start, int length){
         StringBuilder builder = new StringBuilder()
