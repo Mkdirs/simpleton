@@ -120,10 +120,6 @@ public class FunctionStructure extends AbstractStructure {
 
         ASTNode body = bodyResult.tree().get();
 
-        if(!Token.VOID_KW.equals(returnType) && !Token.RETURN_KW.equals(body.get(body.getChildren().size()-1).getToken())){
-            return new TreeBuilderResult(Result.failure("Expected a return statement"), 0);
-        }
-
 
         jmp += bodyResult.jumpIndex();
         function.addChild(body);

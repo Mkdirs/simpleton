@@ -4,6 +4,7 @@ public class Result<T> {
 
     private final T value;
     private final boolean isFailure;
+    private boolean isTerminative = false;
     private final String message;
 
     public static <U> Result<U> success(U value){
@@ -14,13 +15,13 @@ public class Result<T> {
         return new Result(message);
     }
 
-    private Result(T value){
+    protected Result(T value){
         this.value = value;
         this.isFailure = false;
         this.message = null;
     }
 
-    private Result(String message){
+    protected Result(String message){
         this.value = null;
         this.isFailure = true;
         this.message = message;
@@ -36,6 +37,12 @@ public class Result<T> {
     public boolean isSuccess() {
         return !isFailure;
     }
+
+    public boolean isTerminative() {
+        return isTerminative;
+    }
+
+    public void setTerminative(){this.isTerminative = true;}
 
     public String getMessage() {
         return message;

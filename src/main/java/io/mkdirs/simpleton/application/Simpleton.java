@@ -43,6 +43,9 @@ public class Simpleton {
 
             if(lastResult.isFailure())
                 return lastResult;
+
+            if(lastResult.isTerminative())
+                return lastResult;
         }
 
         if(lastResult == null)
@@ -124,11 +127,11 @@ public class Simpleton {
                 evaluator.setScopeContext(currentScope);
 
                 var result = execute(body.getChildren());
-                if(result.isFailure())
-                    return result;
 
                 currentScope = currentScope.getParent();
                 evaluator.setScopeContext(currentScope);
+
+                return result;
             } else if (node.get(2) != null) {
                 ASTNode elseBody = node.get(2).get(0);
                 currentScope = currentScope.child();
@@ -136,11 +139,9 @@ public class Simpleton {
 
                 var result = execute(elseBody.getChildren());
 
-                if(result.isFailure())
-                    return result;
-
                 currentScope = currentScope.getParent();
                 evaluator.setScopeContext(currentScope);
+                return result;
             }
 
         }else if(Token.WHILE_KW.equals(node.getToken())) {
@@ -158,10 +159,11 @@ public class Simpleton {
             evaluator.setScopeContext(currentScope);
             ASTNode body = node.get(1);
 
+            Result result = null;
 
             while ("true".equals(exprRes.get().getLiteral())) {
 
-                var result = execute(body.getChildren());
+                result = execute(body.getChildren());
 
                 if (result.isFailure())
                     return result;
@@ -181,6 +183,9 @@ public class Simpleton {
 
             currentScope = currentScope.getParent();
             evaluator.setScopeContext(currentScope);
+
+            if(result != null)
+                return result;
 
 
         }else if(Token.DEF_KW.equals(node.getToken())) {
@@ -210,16 +215,13 @@ public class Simpleton {
             }
 
         }else if(Token.RETURN_KW.equals(node.getToken())){
-            Result<Token> res = evaluator.evaluate(node.get(0));
-            if(res.isFailure())
-                return res;
+            var res = evaluator.evaluate(node.get(0));
+            res.setTerminative();
 
-            return Result.success(res.get());
+            return res;
 
         }else if(Token.FUNC.equals(node.getToken())){
-            Result<Token> r = evaluator.evaluate(node);
-            if(r.isFailure())
-                return r;
+            return evaluator.evaluate(node);
 
         }
 
