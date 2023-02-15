@@ -126,7 +126,7 @@ public class Func extends Token {
 
     @Override
     public String toText() {
-        String argsStr = String.join(",", rawArgs.stream().map(e -> Type.typeOf(e.kind)).map(Type::name).toList());
+        String argsStr = String.join(",", args.stream().map(e -> Type.typeOf(e.kind)).map(Type::name).toList());
         return name+"("+argsStr+")";
     }
 }

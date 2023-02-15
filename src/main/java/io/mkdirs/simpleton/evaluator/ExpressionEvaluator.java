@@ -59,19 +59,14 @@ public class ExpressionEvaluator extends ResultProvider {
                 if(signature == null)
                     return Result.failure("Function '"+(func.toText())+"' does not exist");
 
-                if(assignVariable && Type.typeOf(TokenKind.VOID_KW).equals(signature.getReturnType()))
+                if(assignVariable && Type.VOID.equals(signature.getReturnType()))
                     return Result.failure("No value returned !");
 
+                Result<LiteralValueToken> res;
+
                 if(Location.BUILTINS == signature.getLocation()){
-                    Result<LiteralValueToken> r = this.scopeContext.getNativeFuncExecutor().execute(func);
-                    if(r.isFailure())
-                        return r;
+                    res = this.scopeContext.getNativeFuncExecutor().execute(func);
 
-
-                    if(!signature.getReturnType().equals(Type.typeOf(r.get().kind)))
-                        return Result.failure("Unexpected error: "+token.toText()+" should return '"+signature.getReturnType().name()+"' but instead returned '"+Type.typeOf(r.get().kind)+"'");
-
-                    return Result.success(r.get());
                 }else{
                     ScopeContext other = this.scopeContext.child();
                     int i = 0;
@@ -82,18 +77,21 @@ public class ExpressionEvaluator extends ResultProvider {
 
                     Simpleton simpleton = new Simpleton(other);
                     ASTNode body = signature.getLocation().getBody();
-                    Result r = simpleton.execute(body.getChildren());
-
-                    if(r.isFailure())
-                        return r;
-
-                    LiteralValueToken tok = (LiteralValueToken) r.get();
-                    if(!signature.getReturnType().equals(Type.typeOf(tok.kind)))
-                        return Result.failure("Unexpected error: "+token.toText()+" should return '"+signature.getReturnType().name()+"' but instead returned '"+Type.typeOf(tok.kind)+"'");
-
-
-                    return Result.success(tok);
+                    res = simpleton.execute(body.getChildren());
                 }
+
+                if(res.isFailure())
+                    return res;
+
+
+                LiteralValueToken tok = res.get();
+                if(Type.VOID.equals(signature.getReturnType()) && !Type.VOID.equals(Type.typeOf(tok.kind)))
+                    return Result.failure(token.toText()+" has a return type of "+Type.VOID+". You cannot return a value here");
+
+                if(!signature.getReturnType().equals(Type.typeOf(tok.kind)) && !Type.NULL.equals(Type.typeOf(tok.kind)))
+                    return Result.failure("Unexpected error: "+token.toText()+" should return '"+signature.getReturnType().name()+"' but instead returned '"+Type.typeOf(tok.kind)+"'");
+
+                return Result.success(res.get());
 
 
             }

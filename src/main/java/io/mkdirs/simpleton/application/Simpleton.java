@@ -101,7 +101,11 @@ public class Simpleton {
                 if (type == null) {
                     type = Type.typeOf(exprRes.get().kind);
                     if (Type.NULL.equals(type)) {
-                        return Result.failure("Cannot infer type of variable " + varName);
+                        if(TokenKind.FUNC.equals(node.right().getToken().kind)){
+                            var signature = this.currentScope.getFunctionSign((Func) node.right().getToken()).get();
+                            type = signature.getReturnType();
+                        }else
+                            return Result.failure("Cannot infer type of variable " + varName);
                     }
                 }
 
