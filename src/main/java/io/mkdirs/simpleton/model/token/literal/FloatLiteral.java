@@ -1,18 +1,11 @@
 package io.mkdirs.simpleton.model.token.literal;
 
-import io.mkdirs.simpleton.model.token.Token;
+import io.mkdirs.simpleton.model.token.TokenKind;
 
-public class FloatLiteral extends Token {
+public class FloatLiteral extends LiteralValueToken {
 
-    public FloatLiteral(String literal) {
-        super("FLOAT_LITERAL", literal);
+    public FloatLiteral(String value) {
+        super(TokenKind.FLOAT_LITERAL, value);
     }
 
-    public FloatLiteral(){this(null);}
-
-
-    @Override
-    public boolean isKeyword() {
-        return false;
-    }
 }

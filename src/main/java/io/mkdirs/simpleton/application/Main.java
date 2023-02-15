@@ -49,6 +49,7 @@ public class Main {
                 return;
             }
 
+
             var result = simpleton.execute(nodesRes.get());
             if(result.isFailure())
                 System.err.println(result.getMessage());

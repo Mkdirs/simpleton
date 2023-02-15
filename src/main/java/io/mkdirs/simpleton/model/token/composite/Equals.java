@@ -1,15 +1,12 @@
 package io.mkdirs.simpleton.model.token.composite;
 
 import io.mkdirs.simpleton.model.token.Token;
+import io.mkdirs.simpleton.model.token.TokenKind;
 
 public class Equals extends Token implements IComposable{
 
-    public Equals(){super("EQUALS", "=");}
+    public Equals(){super(TokenKind.EQUALS);}
 
-    @Override
-    public boolean isKeyword() {
-        return false;
-    }
 
     @Override
     public Token compose(Token token) {

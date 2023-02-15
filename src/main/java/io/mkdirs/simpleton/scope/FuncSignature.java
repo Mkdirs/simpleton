@@ -48,14 +48,14 @@ public class FuncSignature {
 
     public boolean match(Func other){
 
-        if(! name.equals(other.getLiteral()))
+        if(! name.equals(other.name))
             return false;
 
         if(args.size() != other.getArgs().size())
             return false;
 
 
-        return Arrays.equals(args.values().toArray(Type[]::new), other.getArgs().stream().map(Type::typeOf).toArray(Type[]::new));
+        return Arrays.equals(args.values().toArray(Type[]::new), other.getArgs().stream().map(e -> Type.typeOf(e.kind)).toArray(Type[]::new));
     }
 
     @Override

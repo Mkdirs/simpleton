@@ -1,18 +1,10 @@
 package io.mkdirs.simpleton.model.token.keword;
 
 import io.mkdirs.simpleton.model.token.Token;
+import io.mkdirs.simpleton.model.token.TokenKind;
 
 public class StringKW extends Token {
 
-    public StringKW(){super("STRING_KW", "string");}
+    public StringKW(){super(TokenKind.STRING_KW);}
 
-    @Override
-    public boolean isKeyword() {
-        return true;
-    }
-
-    @Override
-    public String group() {
-        return "TYPE";
-    }
 }

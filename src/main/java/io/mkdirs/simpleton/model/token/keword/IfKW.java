@@ -1,13 +1,9 @@
 package io.mkdirs.simpleton.model.token.keword;
 
 import io.mkdirs.simpleton.model.token.Token;
+import io.mkdirs.simpleton.model.token.TokenKind;
 
 public class IfKW extends Token {
 
-    public IfKW(){super("IF_KW", "if");}
-
-    @Override
-    public boolean isKeyword() {
-        return true;
-    }
+    public IfKW(){super(TokenKind.IF_KW);}
 }

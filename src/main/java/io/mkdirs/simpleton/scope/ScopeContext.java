@@ -5,6 +5,7 @@ import io.mkdirs.simpleton.func_executor.NativeFuncExecutor;
 import io.mkdirs.simpleton.model.Type;
 import io.mkdirs.simpleton.model.token.Token;
 import io.mkdirs.simpleton.model.token.composite.Func;
+import io.mkdirs.simpleton.model.token.literal.LiteralValueToken;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -83,7 +84,7 @@ public class ScopeContext {
         return Optional.empty();
     }
 
-    public void pushVariable(String name, Type type, Token value){
+    public void pushVariable(String name, Type type, LiteralValueToken value){
         this.variables.put(name, new VariableHolder(type, value));
     }
 

@@ -1,13 +1,10 @@
 package io.mkdirs.simpleton.model.token.composite;
 
 import io.mkdirs.simpleton.model.token.Token;
+import io.mkdirs.simpleton.model.token.TokenKind;
 
 public class Or extends Token {
 
-    public Or(){super("OR", "||");}
+    public Or(){super(TokenKind.OR);}
 
-    @Override
-    public boolean isKeyword() {
-        return false;
-    }
 }

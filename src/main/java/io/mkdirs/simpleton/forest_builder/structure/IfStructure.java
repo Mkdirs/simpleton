@@ -7,6 +7,7 @@ import io.mkdirs.simpleton.forest_builder.TreeBuilder;
 import io.mkdirs.simpleton.forest_builder.TreeBuilderResult;
 import io.mkdirs.simpleton.forest_builder.structure.AbstractStructure;
 import io.mkdirs.simpleton.model.token.Token;
+import io.mkdirs.simpleton.model.token.TokenKind;
 import io.mkdirs.simpleton.result.Result;
 
 import java.util.List;
@@ -31,7 +32,7 @@ public class IfStructure extends AbstractStructure {
 
     @Override
     protected boolean isValid(List<Token> tokens) {
-        return Simpleton.match(tokens, "if_kw left_parenthesis * right_parenthesis then_kw left_bracket eol");
+        return Simpleton.match(tokens, "if_kw l_paren * r_paren then_kw l_bracket eol");
     }
 
     @Override
@@ -39,14 +40,22 @@ public class IfStructure extends AbstractStructure {
         if(!isValid(tokens))
             return super.build(tokens);
 
-        ASTNode root = new ASTNode(Token.IF_KW);
+        ASTNode root = new ASTNode(tokens.get(0));
 
-        Result<ASTNode> exprRes = evaluator.buildTree(tokens.subList(2, tokens.indexOf(Token.R_PAREN)));
+        Result<ASTNode> exprRes = evaluator.buildTree(tokens.subList(2, tokens.indexOf(
+                tokens.stream()
+                        .filter(e -> TokenKind.R_PAREN.equals(e.kind))
+                        .findFirst().orElse(null)
+        )));
 
         if(exprRes.isFailure())
             return new TreeBuilderResult(exprRes, 0);
 
-        int indexOfEOL = tokens.indexOf(Token.EOL);
+        int indexOfEOL = tokens.indexOf(
+                tokens.stream()
+                        .filter(e -> TokenKind.EOL.equals(e.kind))
+                        .findFirst().orElse(null)
+        );
         int jmp = indexOfEOL+1;
         TreeBuilderResult bodyResult = buildBody(tokens.subList(jmp, tokens.size()));
 

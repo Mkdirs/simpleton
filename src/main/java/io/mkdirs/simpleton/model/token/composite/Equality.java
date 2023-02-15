@@ -1,13 +1,9 @@
 package io.mkdirs.simpleton.model.token.composite;
 
 import io.mkdirs.simpleton.model.token.Token;
+import io.mkdirs.simpleton.model.token.TokenKind;
 
 public class Equality extends Token {
 
-    public Equality(){super("EQUALITY", "==");}
-
-    @Override
-    public boolean isKeyword() {
-        return false;
-    }
+    public Equality(){super(TokenKind.EQUALITY);}
 }

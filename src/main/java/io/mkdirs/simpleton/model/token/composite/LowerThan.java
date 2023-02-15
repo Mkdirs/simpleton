@@ -1,19 +1,16 @@
 package io.mkdirs.simpleton.model.token.composite;
 
 import io.mkdirs.simpleton.model.token.Token;
+import io.mkdirs.simpleton.model.token.TokenKind;
 
 public class LowerThan extends Token implements IComposable{
 
-    public LowerThan(){super("LOWER_THAN", "<");}
+    public LowerThan(){super(TokenKind.LOWER_THAN);}
 
-    @Override
-    public boolean isKeyword() {
-        return false;
-    }
 
     @Override
     public Token compose(Token token) {
-        if(Token.EQUALS.equals(token))
+        if(TokenKind.EQUALS.equals(token.kind))
             return new LowerThanEquals();
 
         return null;

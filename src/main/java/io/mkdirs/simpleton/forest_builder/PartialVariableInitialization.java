@@ -4,6 +4,8 @@ import io.mkdirs.simpleton.application.Simpleton;
 import io.mkdirs.simpleton.evaluator.ASTNode;
 import io.mkdirs.simpleton.evaluator.ExpressionEvaluator;
 import io.mkdirs.simpleton.model.token.Token;
+import io.mkdirs.simpleton.model.token.TokenKind;
+import io.mkdirs.simpleton.model.token.composite.Equals;
 import io.mkdirs.simpleton.result.Result;
 
 import java.util.List;
@@ -24,7 +26,7 @@ public class PartialVariableInitialization extends TreeBuilder{
 
     @Override
     protected boolean isValid(List<Token> tokens) {
-        return Simpleton.match(tokens, "let_kw variable_name equals * eol");
+        return Simpleton.match(tokens, "let_kw var_name equals * eol");
     }
 
     @Override
@@ -32,12 +34,16 @@ public class PartialVariableInitialization extends TreeBuilder{
         if(! isValid(tokens))
             return super.build(tokens);
 
-        ASTNode root = new ASTNode(Token.EQUALS);
+        ASTNode root = new ASTNode(new Equals());
 
-        ASTNode left = new ASTNode(Token.LET_KW);
+        ASTNode left = new ASTNode(tokens.get(0));
         left.addChild(new ASTNode(tokens.get(1)));
 
-        int indexOfEOL = tokens.indexOf(Token.EOL);
+        int indexOfEOL = tokens.indexOf(
+                tokens.stream()
+                        .filter(e -> TokenKind.EOL.equals(e.kind))
+                        .findFirst().orElse(null)
+        );
         Result<ASTNode> exprRes = evaluator.buildTree(tokens.subList(3, indexOfEOL));
 
         if(exprRes.isFailure())

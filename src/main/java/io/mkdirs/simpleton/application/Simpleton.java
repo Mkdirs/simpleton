@@ -8,7 +8,13 @@ import io.mkdirs.simpleton.forest_builder.structure.IfStructure;
 import io.mkdirs.simpleton.forest_builder.structure.WhileStructure;
 import io.mkdirs.simpleton.lexer.Lexer;
 import io.mkdirs.simpleton.model.Type;
+import io.mkdirs.simpleton.model.token.EOL;
 import io.mkdirs.simpleton.model.token.Token;
+import io.mkdirs.simpleton.model.token.TokenKind;
+import io.mkdirs.simpleton.model.token.composite.Func;
+import io.mkdirs.simpleton.model.token.composite.VariableName;
+import io.mkdirs.simpleton.model.token.literal.LiteralValueToken;
+import io.mkdirs.simpleton.model.token.literal.VoidPlaceholder;
 import io.mkdirs.simpleton.result.Result;
 import io.mkdirs.simpleton.scope.FuncSignature;
 import io.mkdirs.simpleton.scope.Location;
@@ -35,7 +41,7 @@ public class Simpleton {
     }
 
 
-    public Result execute(List<ASTNode> nodes){
+    public Result<LiteralValueToken> execute(List<ASTNode> nodes){
         Result lastResult = null;
 
         for(ASTNode node : nodes){
@@ -46,26 +52,26 @@ public class Simpleton {
         }
 
         if(lastResult == null)
-            return Result.success(Token.VOID_KW);
+            return Result.success(VoidPlaceholder.VOID);
 
         return lastResult;
     }
 
-    private Result execute(ASTNode node){
-        if(Token.LET_KW.equals(node.getToken())){
-            String varName = node.left().getToken().getLiteral();
-            Type type = Type.typeOf(node.right().getToken());
+    private Result<LiteralValueToken> execute(ASTNode node){
+        if(TokenKind.LET_KW.equals(node.getToken().kind)){
+            String varName = ((VariableName) node.left().getToken()).name;
+            Type type = Type.typeOf(node.right().getToken().kind);
             if(currentScope.getVariable(varName).isPresent()){
                 return Result.failure("Variable "+varName+" is already declared !");
             }
 
             currentScope.pushVariable(varName, type);
-        }else if(Token.EQUALS.equals(node.getToken())) {
+        }else if(TokenKind.EQUALS.equals(node.getToken().kind)) {
             ASTNode left = node.left();
-            Result<Token> exprRes = evaluator.evaluate(node.right(), true);
+            Result<LiteralValueToken> exprRes = evaluator.evaluate(node.right(), true);
 
-            if (Token.VARIABLE_NAME.equals(left.getToken())) {
-                String varName = left.getToken().getLiteral();
+            if (TokenKind.VAR_NAME.equals(left.getToken().kind)) {
+                String varName = ((VariableName)left.getToken()).name;
                 if (!currentScope.getVariable(varName).isPresent()) {
                     return Result.failure("Undeclared variable " + varName + " !");
                 }
@@ -75,14 +81,14 @@ public class Simpleton {
                 }
 
                 VariableHolder varHolder = currentScope.getVariable(varName).get();
-                if (!varHolder.getType().equals(Type.typeOf(exprRes.get())) && !Token.NULL_KW.equals(Type.typeOf(exprRes.get()))) {
-                    return Result.failure("Expected type " + varHolder.getType() + " but instead got " + Type.typeOf(exprRes.get()));
+                if (!varHolder.getType().equals(Type.typeOf(exprRes.get().kind)) && !Type.NULL.equals(Type.typeOf(exprRes.get().kind))) {
+                    return Result.failure("Expected type " + varHolder.getType() + " but instead got " + Type.typeOf(exprRes.get().kind));
                 }
                 currentScope.getVariable(varName).get().setValue(exprRes.get());
 
-            } else if (Token.LET_KW.equals(left.getToken())) {
-                String varName = left.left().getToken().getLiteral();
-                Type type = left.right() != null ? Type.typeOf(left.right().getToken()) : null;
+            } else if (TokenKind.LET_KW.equals(left.getToken().kind)) {
+                String varName = ((VariableName)left.left().getToken()).name;
+                Type type = left.right() != null ? Type.typeOf(left.right().getToken().kind) : null;
 
                 if (currentScope.getVariable(varName).isPresent()) {
                     return Result.failure("Variable " + varName + " is already declared !");
@@ -93,32 +99,32 @@ public class Simpleton {
                 }
 
                 if (type == null) {
-                    type = Type.typeOf(exprRes.get());
+                    type = Type.typeOf(exprRes.get().kind);
                     if (Type.NULL.equals(type)) {
                         return Result.failure("Cannot infer type of variable " + varName);
                     }
                 }
 
 
-                if (!type.equals(Type.typeOf(exprRes.get())) && !Type.NULL.equals(Type.typeOf(exprRes.get()))) {
-                    return Result.failure("Expected type " + type + " but instead got " + Type.typeOf(exprRes.get()));
+                if (!type.equals(Type.typeOf(exprRes.get().kind)) && !Type.NULL.equals(Type.typeOf(exprRes.get().kind))) {
+                    return Result.failure("Expected type " + type + " but instead got " + Type.typeOf(exprRes.get().kind));
                 }
 
                 currentScope.pushVariable(varName, type, exprRes.get());
 
             }
 
-        }else if(Token.IF_KW.equals(node.getToken())) {
-            Result<Token> exprRes = evaluator.evaluate(node.get(0));
+        }else if(TokenKind.IF_KW.equals(node.getToken().kind)) {
+            Result<LiteralValueToken> exprRes = evaluator.evaluate(node.get(0));
             if (exprRes.isFailure()) {
                 return Result.failure(exprRes.getMessage());
             }
 
-            if (!Type.BOOLEAN.equals(Type.typeOf(exprRes.get()))) {
-                return Result.failure("Expected type " + Type.BOOLEAN + " but instead got " + Type.typeOf(exprRes.get()));
+            if (!Type.BOOLEAN.equals(Type.typeOf(exprRes.get().kind))) {
+                return Result.failure("Expected type " + Type.BOOLEAN + " but instead got " + Type.typeOf(exprRes.get().kind));
             }
 
-            if ("true".equals(exprRes.get().getLiteral())) {
+            if ("true".equals(exprRes.get().value)) {
                 ASTNode body = node.get(1);
                 currentScope = currentScope.child();
                 evaluator.setScopeContext(currentScope);
@@ -141,24 +147,24 @@ public class Simpleton {
                 return result;
             }
 
-        }else if(Token.WHILE_KW.equals(node.getToken())) {
+        }else if(TokenKind.WHILE_KW.equals(node.getToken().kind)) {
 
-            Result<Token> exprRes = evaluator.evaluate(node.get(0));
+            Result<LiteralValueToken> exprRes = evaluator.evaluate(node.get(0));
             if (exprRes.isFailure()) {
                 return Result.failure(exprRes.getMessage());
             }
 
-            if (!Type.BOOLEAN.equals(Type.typeOf(exprRes.get()))) {
-                return Result.failure("Expected type " + Type.BOOLEAN + " but instead got " + Type.typeOf(exprRes.get()));
+            if (!Type.BOOLEAN.equals(Type.typeOf(exprRes.get().kind))) {
+                return Result.failure("Expected type " + Type.BOOLEAN + " but instead got " + Type.typeOf(exprRes.get().kind));
             }
 
             currentScope = currentScope.child();
             evaluator.setScopeContext(currentScope);
             ASTNode body = node.get(1);
 
-            Result result = null;
+            Result<LiteralValueToken> result = null;
 
-            while ("true".equals(exprRes.get().getLiteral())) {
+            while ("true".equals(exprRes.get().value)) {
 
                 result = execute(body.getChildren());
 
@@ -171,8 +177,8 @@ public class Simpleton {
                     return Result.failure(exprRes.getMessage());
                 }
 
-                if (!Type.BOOLEAN.equals(Type.typeOf(exprRes.get()))) {
-                    return Result.failure("Expected type " + Type.BOOLEAN + " but instead got " + Type.typeOf(exprRes.get()));
+                if (!Type.BOOLEAN.equals(Type.typeOf(exprRes.get().kind))) {
+                    return Result.failure("Expected type " + Type.BOOLEAN + " but instead got " + Type.typeOf(exprRes.get().kind));
                 }
 
             }
@@ -185,13 +191,14 @@ public class Simpleton {
                 return result;
 
 
-        }else if(Token.DEF_KW.equals(node.getToken())) {
+        }else if(TokenKind.DEF_KW.equals(node.getToken().kind)) {
 
-            if (Token.FUNCTION_KW.equals(node.get(0).getToken())) {
+            if (TokenKind.FUNCTION_KW.equals(node.get(0).getToken().kind)) {
                 ASTNode function = node.get(0);
-                String name = function.get(0).getToken().getLiteral();
+                VariableName funcName = (VariableName) function.get(0).getToken();
+                String name = funcName.name;
                 List<Map.Entry<String, Type>> entries = function.getChildren().subList(1, function.getChildren().size() - 2).stream()
-                        .map(n -> Map.entry(n.getToken().getLiteral(), Type.typeOf(n.get(0).getToken())))
+                        .map(n -> Map.entry( ((VariableName)n.getToken()).name, Type.typeOf(n.get(0).getToken().kind)))
                         .collect(Collectors.toList());
 
                 Map<String, Type> params = new LinkedHashMap<>();
@@ -199,7 +206,7 @@ public class Simpleton {
                     params.put(entry.getKey(), entry.getValue());
                 }
 
-                Type returnType = Type.typeOf(function.get(function.getChildren().size() - 2).getToken());
+                Type returnType = Type.typeOf(function.get(function.getChildren().size() - 2).getToken().kind);
 
                 Location location = new Location(function.get(function.getChildren().size()-1));
 
@@ -211,10 +218,10 @@ public class Simpleton {
                 currentScope.pushFunctionSign(funcSign);
             }
 
-        }else if(Token.RETURN_KW.equals(node.getToken())){
+        }else if(TokenKind.RETURN_KW.equals(node.getToken().kind)){
             Result res;
             if(node.isLeaf()){
-                res = Result.success(Token.VOID_KW);
+                res = Result.success(VoidPlaceholder.VOID);
             }else{
                 res = evaluator.evaluate(node.get(0));
             }
@@ -222,12 +229,12 @@ public class Simpleton {
 
             return res;
 
-        }else if(Token.FUNC.equals(node.getToken())){
+        }else if(TokenKind.FUNC.equals(node.getToken().kind)){
             return evaluator.evaluate(node);
 
         }
 
-        return Result.success(Token.VOID_KW);
+        return Result.success(VoidPlaceholder.VOID);
     }
 
 
@@ -252,7 +259,7 @@ public class Simpleton {
             }
 
             res.addAll(tokensResult.get());
-            res.add(Token.EOL);
+            res.add(new EOL());
 
 
             lineIndex++;
@@ -309,7 +316,7 @@ public class Simpleton {
             if("*".equals(candidate))
                 acceptAny = true;
 
-            if(!candidate.equalsIgnoreCase(token.getName()) && !candidate.equalsIgnoreCase(token.group())) {
+            if(!candidate.equalsIgnoreCase(token.kind.name()) && !token.kind.group.contains(candidate.toLowerCase())) {
                 if(!acceptAny)
                     return false;
             }else

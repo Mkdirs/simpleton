@@ -1,13 +1,9 @@
 package io.mkdirs.simpleton.model.token.keword;
 
 import io.mkdirs.simpleton.model.token.Token;
+import io.mkdirs.simpleton.model.token.TokenKind;
 
 public class DoKW extends Token {
 
-    public DoKW(){super("DO_KW", "do");}
-
-    @Override
-    public boolean isKeyword() {
-        return true;
-    }
+    public DoKW(){super(TokenKind.DO_KW);}
 }

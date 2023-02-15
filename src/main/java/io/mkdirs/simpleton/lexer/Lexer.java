@@ -1,9 +1,8 @@
 package io.mkdirs.simpleton.lexer;
 
-import io.mkdirs.simpleton.model.token.Token;
-import io.mkdirs.simpleton.model.token.composite.Func;
-import io.mkdirs.simpleton.model.token.composite.VariableName;
-import io.mkdirs.simpleton.model.token.composite.IComposable;
+import io.mkdirs.simpleton.model.token.*;
+import io.mkdirs.simpleton.model.token.composite.*;
+import io.mkdirs.simpleton.model.token.keword.*;
 import io.mkdirs.simpleton.model.token.literal.*;
 import io.mkdirs.simpleton.result.Result;
 import io.mkdirs.simpleton.result.ResultProvider;
@@ -38,34 +37,68 @@ public class Lexer extends ResultProvider {
             }
 
 
-            var charMatch = Token.values.stream()
-                    .filter(Token::hasLiteral)
+            var charMatch = Arrays.stream(TokenKind.values())
+                    .filter(TokenKind::hasLiteral)
                     .filter(e -> !e.isKeyword())
-                    .map(Token::getLiteral)
-                    .filter(e -> car.equals(e.charAt(0)))
+                    .filter(e -> car.equals(e.literal.charAt(0)))
                     .findFirst();
 
 
             if(charMatch.isPresent()) {
-                String literal = charMatch.get();
-                tokens.add(Token.values.stream().filter(token -> literal.equals(token.getLiteral())).findFirst().get());
+                TokenKind kind = charMatch.get();
+                switch (kind){
+                    case AMPERSAND -> tokens.add(new Ampersand());
+                    case EQUALS -> tokens.add(new Equals());
+                    case GREATER_THAN -> tokens.add(new GreaterThan());
+                    case LOWER_THAN -> tokens.add(new LowerThan());
+                    case NOT -> tokens.add(new Not());
+                    case PIPE -> tokens.add(new Pipe());
+                    case COLON -> tokens.add(new Colon());
+                    case COMMA -> tokens.add(new Comma());
+                    case DIVIDE -> tokens.add(new Divide());
+                    case EOL -> tokens.add(new EOL());
+                    case L_BRACKET -> tokens.add(new LBracket());
+                    case R_BRACKET -> tokens.add(new RBracket());
+                    case L_PAREN -> tokens.add(new LParen());
+                    case R_PAREN -> tokens.add(new RParen());
+                    case MINUS -> tokens.add(new Minus());
+                    case PLUS -> tokens.add(new Plus());
+                    case STAR -> tokens.add(new Star());
+                    case PERCENT -> tokens.add(new Percent());
+                }
 
-                charIndex += (literal.length());
+                charIndex += (kind.literal.length());
                 continue;
 
             }else{
-                var textualMatch = Token.values.stream()
-                        .filter(Token::hasLiteral)
-                        .filter(Token::isKeyword)
-                        .map(Token::getLiteral)
-                        .filter(this::isText)
+                var textualMatch = Arrays.stream(TokenKind.values())
+                        .filter(TokenKind::hasLiteral)
+                        .filter(TokenKind::isKeyword)
+                        .filter(e -> isText(e.literal))
                         .findFirst();
 
                 if(textualMatch.isPresent()){
-                    String literal = textualMatch.get();
-                    tokens.add(Token.values.stream().filter(token -> literal.equals(token.getLiteral())).findFirst().get());
+                    TokenKind kind = textualMatch.get();
+                    switch (kind){
+                        case BOOL_KW -> tokens.add(new BoolKW());
+                        case CHAR_KW -> tokens.add(new CharKW());
+                        case STRING_KW -> tokens.add(new StringKW());
+                        case INT_KW -> tokens.add(new IntKW());
+                        case FLOAT_KW -> tokens.add(new FloatKW());
+                        case DEF_KW -> tokens.add(new DefKW());
+                        case DO_KW -> tokens.add(new DoKW());
+                        case ELSE_KW -> tokens.add(new ElseKW());
+                        case FUNCTION_KW -> tokens.add(new FunctionKW());
+                        case IF_KW -> tokens.add(new IfKW());
+                        case LET_KW -> tokens.add(new LetKW());
+                        case NULL_KW -> tokens.add(new NullKW());
+                        case RETURN_KW -> tokens.add(new ReturnKW());
+                        case THEN_KW -> tokens.add(new ThenKW());
+                        case VOID_KW -> tokens.add(new VoidKW());
+                        case WHILE_KW -> tokens.add(new WhileKW());
+                    }
 
-                    charIndex += (literal.length());
+                    charIndex += (kind.literal.length());
                     continue;
 
                 }else if(Character.isDigit(car)) {
@@ -213,11 +246,11 @@ public class Lexer extends ResultProvider {
     }
 
     private Result<Func> buildFunc(List<Token> tokens){
-        if(!Token.FUNC.equals(tokens.get(0)))
+        if(!TokenKind.FUNC.equals(tokens.get(0).kind))
             return null;
 
         Func func = (Func) tokens.get(0);
-        func.addInBody(Token.L_PAREN);
+        func.addInBody(new LParen());
         int openParen = 1;
         boolean finished = false;
         boolean lonelyComma = false;
@@ -225,14 +258,14 @@ public class Lexer extends ResultProvider {
         while(i< tokens.size() && !finished){
             Token current = tokens.get(i);
 
-            if(Token.L_PAREN.equals(current)) {
+            if(TokenKind.L_PAREN.equals(current.kind)) {
                 openParen++;
                 i++;
                 func.addInBody(current);
                 continue;
             }
 
-            if(Token.R_PAREN.equals(current)){
+            if(TokenKind.R_PAREN.equals(current.kind)){
                 openParen--;
 
                 if(openParen <= 0){
@@ -246,7 +279,7 @@ public class Lexer extends ResultProvider {
             }
 
 
-            if(Token.FUNC.equals(current)){
+            if(TokenKind.FUNC.equals(current.kind)){
                 Result<Func> otherFuncRes = buildFunc(tokens.subList(i, tokens.size()));
                 if(otherFuncRes.isFailure())
                     return otherFuncRes;
@@ -254,9 +287,9 @@ public class Lexer extends ResultProvider {
                 func.addInBody(otherFuncRes.get());
                 i+= otherFuncRes.get().getFullBodyLength();
                 continue;
-            }else if(Token.COMMA.equals(current)) {
+            }else if(TokenKind.COMMA.equals(current.kind)) {
                 func.addInBody(current);
-                lonelyComma = (Token.COMMA.equals(tokens.get(i-1)) || i-1 == 0) || (i+1 == tokens.size()-1 || Token.COMMA.equals(tokens.get(i+1)));
+                lonelyComma = (TokenKind.COMMA.equals(tokens.get(i-1).kind) || i-1 == 0) || (i+1 == tokens.size()-1 || TokenKind.COMMA.equals(tokens.get(i+1).kind));
 
                 if(lonelyComma)
                     finished = true;
@@ -285,7 +318,7 @@ public class Lexer extends ResultProvider {
         while(i < tokens.size()) {
             Token current = tokens.get(i);
 
-            if (Token.FUNC.equals(current)) {
+            if (TokenKind.FUNC.equals(current.kind)) {
                 Result<Func> funcRes = buildFunc(tokens.subList(i, tokens.size()));
 
                 if(funcRes.isFailure())
@@ -346,10 +379,10 @@ public class Lexer extends ResultProvider {
         while(offst < this.statement.length()){
             Character c = this.statement.charAt(offst);
 
-            boolean metToken = Token.values.stream()
-                    .filter(Token::hasLiteral)
+            boolean metToken = Arrays.stream(TokenKind.values())
+                    .filter(TokenKind::hasLiteral)
                     .filter(e -> !e.isKeyword())
-                    .map(Token::getLiteral)
+                    .map(e -> e.literal)
                     .anyMatch(e -> c.equals(e.charAt(0)));
 
             if(Character.isWhitespace(c) || metToken)

@@ -4,7 +4,11 @@ import io.mkdirs.simpleton.application.Simpleton;
 import io.mkdirs.simpleton.evaluator.operator.Operator;
 import io.mkdirs.simpleton.model.Type;
 import io.mkdirs.simpleton.model.token.Token;
+import io.mkdirs.simpleton.model.token.TokenKind;
 import io.mkdirs.simpleton.model.token.composite.Func;
+import io.mkdirs.simpleton.model.token.composite.VariableName;
+import io.mkdirs.simpleton.model.token.literal.LiteralValueToken;
+import io.mkdirs.simpleton.model.token.literal.NullPlaceholder;
 import io.mkdirs.simpleton.result.Result;
 import io.mkdirs.simpleton.result.ResultProvider;
 import io.mkdirs.simpleton.scope.FuncSignature;
@@ -26,21 +30,22 @@ public class ExpressionEvaluator extends ResultProvider {
     public void setScopeContext(ScopeContext scopeContext){this.scopeContext = scopeContext;}
 
 
-    public Result<Token> evaluate(ASTNode tree, boolean assignVariable){
+    public Result<LiteralValueToken> evaluate(ASTNode tree, boolean assignVariable){
         if(tree == null)
             return Result.success(null);
 
         if(tree.isLeaf()) {
             Token token = tree.getToken();
-            if(Token.VARIABLE_NAME.equals(token)){
-                VariableHolder var = this.scopeContext.getVariable(token.getLiteral()).orElse(null);
+            if(TokenKind.VAR_NAME.equals(token.kind)){
+                var varName = (VariableName) token;
+                VariableHolder var = this.scopeContext.getVariable(varName.name).orElse(null);
 
                 if(var == null)
-                    return Result.failure("Variable '"+token.getLiteral()+"' does not exist");
+                    return Result.failure("Variable '"+varName.name+"' does not exist");
 
                 return Result.success(var.getValue());
 
-            }else if(Token.FUNC.equals(token)){
+            }else if(TokenKind.FUNC.equals(token.kind)){
                 Func func = (Func) token;
                 Result funcRes = func.computeArgs(this);
 
@@ -54,17 +59,17 @@ public class ExpressionEvaluator extends ResultProvider {
                 if(signature == null)
                     return Result.failure("Function '"+(func.toText())+"' does not exist");
 
-                if(assignVariable && Token.VOID_KW.equals(signature.getReturnType()))
+                if(assignVariable && Type.typeOf(TokenKind.VOID_KW).equals(signature.getReturnType()))
                     return Result.failure("No value returned !");
 
                 if(Location.BUILTINS == signature.getLocation()){
-                    Result<Token> r = this.scopeContext.getNativeFuncExecutor().execute(func);
+                    Result<LiteralValueToken> r = this.scopeContext.getNativeFuncExecutor().execute(func);
                     if(r.isFailure())
                         return r;
 
 
-                    if(!signature.getReturnType().equals(Type.typeOf(r.get())))
-                        return Result.failure("Unexpected error: "+token.toText()+" should return '"+signature.getReturnType().name()+"' but instead returned '"+Type.typeOf(r.get())+"'");
+                    if(!signature.getReturnType().equals(Type.typeOf(r.get().kind)))
+                        return Result.failure("Unexpected error: "+token.toText()+" should return '"+signature.getReturnType().name()+"' but instead returned '"+Type.typeOf(r.get().kind)+"'");
 
                     return Result.success(r.get());
                 }else{
@@ -82,9 +87,9 @@ public class ExpressionEvaluator extends ResultProvider {
                     if(r.isFailure())
                         return r;
 
-                    Token tok = (Token) r.get();
-                    if(!signature.getReturnType().equals(Type.typeOf(tok)))
-                        return Result.failure("Unexpected error: "+token.toText()+" should return '"+signature.getReturnType().name()+"' but instead returned '"+Type.typeOf(tok)+"'");
+                    LiteralValueToken tok = (LiteralValueToken) r.get();
+                    if(!signature.getReturnType().equals(Type.typeOf(tok.kind)))
+                        return Result.failure("Unexpected error: "+token.toText()+" should return '"+signature.getReturnType().name()+"' but instead returned '"+Type.typeOf(tok.kind)+"'");
 
 
                     return Result.success(tok);
@@ -92,41 +97,44 @@ public class ExpressionEvaluator extends ResultProvider {
 
 
             }
-            return Result.success(tree.getToken());
+            if(TokenKind.NULL_KW.equals(tree.getToken().kind))
+                return Result.success(NullPlaceholder.NULL);
+
+            return Result.success((LiteralValueToken) tree.getToken());
         }
 
 
 
-        Result<Token> left = evaluate(tree.left());
+        Result<LiteralValueToken> left = evaluate(tree.left());
 
         if(left.isFailure())
             return pushError(left.getMessage());
 
 
-        Result<Token> right = evaluate(tree.right());
+        Result<LiteralValueToken> right = evaluate(tree.right());
 
         if(right.isFailure())
             return pushError(right.getMessage());
 
 
 
-        Optional<Operator> operator = getOperator(tree.getToken());
+        Optional<Operator> operator = getOperator(tree.getToken().kind);
 
         if(operator.isPresent()){
-            Optional<Token> r = operator.get().evaluate(left.get(), right.get());
+            Optional<LiteralValueToken> r = operator.get().evaluate(left.get(), right.get());
             if(r.isEmpty())
-                return pushError("Unable to apply '"+operator.get().getToken().getLiteral()+"' on '"+left.get()+"' and '"+right.get()+"'");
+                return pushError("Unable to apply '"+operator.get().getTokenKind().literal+"' on '"+left.get()+"' and '"+right.get()+"'");
 
             return Result.success(r.get());
         }
 
-        return pushError("Unknown operator: \""+tree.getToken().getLiteral()+"\"");
+        return pushError("Unknown operator: \""+tree.getToken().kind.literal+"\"");
     }
 
-    public Result<Token> evaluate(ASTNode tree){return evaluate(tree, false);}
+    public Result<LiteralValueToken> evaluate(ASTNode tree){return evaluate(tree, false);}
 
-    private Optional<Operator> getOperator(Token token){
-        return Arrays.stream(Operator.OPERATORS).filter(e  -> e.getToken().equals(token)).findFirst();
+    private Optional<Operator> getOperator(TokenKind tokenKind){
+        return Arrays.stream(Operator.OPERATORS).filter(e  -> e.getTokenKind().equals(tokenKind)).findFirst();
     }
 
     public Result<ASTNode> buildTree(List<Token> tokens){
@@ -159,7 +167,7 @@ public class ExpressionEvaluator extends ResultProvider {
     }
 
     private int getClosingParenthesis(int start, List<Token> tokens){
-        if(!Token.L_PAREN.equals(tokens.get(start)))
+        if(!TokenKind.L_PAREN.equals(tokens.get(start).kind))
             return -1;
 
         int openParenthesis = 1;
@@ -167,9 +175,9 @@ public class ExpressionEvaluator extends ResultProvider {
         while(i < tokens.size() && openParenthesis > 0){
             Token t = tokens.get(i);
 
-            if(Token.L_PAREN.equals(t))
+            if(TokenKind.L_PAREN.equals(t.kind))
                 openParenthesis++;
-            else if(Token.R_PAREN.equals(t))
+            else if(TokenKind.R_PAREN.equals(t.kind))
                 openParenthesis--;
 
             i++;
@@ -190,23 +198,23 @@ public class ExpressionEvaluator extends ResultProvider {
         for(int i = 0; i < tokens.size(); i++){
             Token token = tokens.get(i);
 
-            if(token.equals(Token.L_PAREN)) {
+            if(token.kind.equals(TokenKind.L_PAREN)) {
                 currentOperatorParenthesisScope++;
-            }else if(token.equals(Token.R_PAREN)){
+            }else if(token.kind.equals(TokenKind.R_PAREN)){
                 currentOperatorParenthesisScope--;
 
                 if(currentOperatorParenthesisScope < 1)
                     currentOperatorParenthesisScope = 1;
             }
 
-            Optional<Operator> operator = Arrays.stream(Operator.OPERATORS).filter(e -> e.getToken().equals(token)).findFirst();
+            Optional<Operator> operator = Arrays.stream(Operator.OPERATORS).filter(e -> e.getTokenKind().equals(token.kind)).findFirst();
             if(operator.isPresent()){
                 if(mainOperatorIndex == -1) {
                     mainOperatorIndex = i;
                     mainOperatorParenthesisScope = currentOperatorParenthesisScope;
                 }else{
                     final int main = mainOperatorIndex;
-                    Optional<Operator> mainOperatorOpt = Arrays.stream(Operator.OPERATORS).filter(e -> e.getToken().equals(tokens.get(main))).findFirst();
+                    Optional<Operator> mainOperatorOpt = Arrays.stream(Operator.OPERATORS).filter(e -> e.getTokenKind().equals(tokens.get(main).kind)).findFirst();
 
                     if(operator.get().getPriority() + (currentOperatorParenthesisScope*parenthesisFactor) <=  mainOperatorOpt.get().getPriority() + (mainOperatorParenthesisScope*parenthesisFactor)){
                         mainOperatorIndex = i;

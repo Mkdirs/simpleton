@@ -4,8 +4,9 @@ import io.mkdirs.simpleton.evaluator.ASTNode;
 import io.mkdirs.simpleton.evaluator.ExpressionEvaluator;
 import io.mkdirs.simpleton.model.Type;
 import io.mkdirs.simpleton.model.token.Token;
+import io.mkdirs.simpleton.model.token.TokenKind;
+import io.mkdirs.simpleton.model.token.literal.LiteralValueToken;
 import io.mkdirs.simpleton.result.Result;
-import io.mkdirs.simpleton.scope.ScopeContext;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,50 +14,52 @@ import java.util.List;
 public class Func extends Token {
 
     private List<Token> body = new ArrayList<>();
-    private final List<Token> args = new ArrayList<>();
+    private final List<Token> rawArgs = new ArrayList<>();
+    private final List<LiteralValueToken> args = new ArrayList<>();
 
     private boolean computedArgs = false;
     //private int fullBodyLength = 0;
 
-    public Func(String name){
-        super("FUNC", name);
-    }
+    public final String name;
 
-    public Func(){
-        this(null);
+    public Func(String name){
+        super(TokenKind.FUNC);
+        this.name = name;
     }
 
 
     public List<Token> getBody() {
         return body;
     }
-    public List<Token> getArgs(){return args;}
+
+    public List<Token> getRawArgs(){return rawArgs;}
+    public List<LiteralValueToken> getArgs(){return args;}
 
     public boolean areArgsComputed() {
         return computedArgs;
     }
 
-    private Result<Token> computeArg(List<Token> tokens, ExpressionEvaluator evaluator){
+    private Result<LiteralValueToken> computeArg(List<Token> tokens, ExpressionEvaluator evaluator){
         Result<ASTNode> res =  evaluator.buildTree(tokens);
 
         if(res.isFailure())
             return Result.failure(res.getMessage());
 
-        Result<Token> resToken = evaluator.evaluate(res.get());
+        Result<LiteralValueToken> resToken = evaluator.evaluate(res.get());
 
         if(resToken.isFailure())
             return resToken;
 
         Token tok = resToken.get();
 
-        if(Token.FUNC.equals(tok)) {
+        if(TokenKind.FUNC.equals(tok.kind)) {
             Result r = ((Func) tok).computeArgs(evaluator);
 
             if(r.isFailure())
                 return r;
         }
 
-        return Result.success(tok);
+        return Result.success((LiteralValueToken) tok);
 
     }
 
@@ -65,9 +68,9 @@ public class Func extends Token {
         args.clear();
 
         for(Token t : body.subList(1, body.size()-1)){
-            if(Token.COMMA.equals(t)){
+            if(TokenKind.COMMA.equals(t.kind)){
 
-                Result<Token> res = computeArg(temp, evaluator);
+                Result<LiteralValueToken> res = computeArg(temp, evaluator);
                 if(res.isFailure())
                     return res;
 
@@ -81,7 +84,7 @@ public class Func extends Token {
         }
 
         if(!temp.isEmpty()){
-            Result<Token> res = computeArg(temp, evaluator);
+            Result<LiteralValueToken> res = computeArg(temp, evaluator);
             if(res.isFailure())
                 return res;
 
@@ -114,21 +117,17 @@ public class Func extends Token {
         this.body = body;
     }
 
-    @Override
-    public boolean isKeyword() {
-        return false;
-    }
 
     @Override
     public String toString() {
         String bodyStr = String.join(",", body.stream().map(Token::toString).toList());
-        return "Token."+name+"('"+literal+"{"+bodyStr+"}')";
+        return "Token."+kind+"('"+name+"{"+bodyStr+"}')";
     }
 
     @Override
     public String toText() {
-        String argsStr = String.join(",", args.stream().map(Type::typeOf).map(Type::name).toList());
-        return literal+"("+argsStr+")";
+        String argsStr = String.join(",", rawArgs.stream().map(e -> Type.typeOf(e.kind)).map(Type::name).toList());
+        return name+"("+argsStr+")";
     }
 }
 

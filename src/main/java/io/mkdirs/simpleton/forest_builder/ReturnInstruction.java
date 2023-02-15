@@ -4,6 +4,7 @@ import io.mkdirs.simpleton.application.Simpleton;
 import io.mkdirs.simpleton.evaluator.ASTNode;
 import io.mkdirs.simpleton.evaluator.ExpressionEvaluator;
 import io.mkdirs.simpleton.model.token.Token;
+import io.mkdirs.simpleton.model.token.TokenKind;
 import io.mkdirs.simpleton.result.Result;
 
 import java.util.List;
@@ -26,10 +27,14 @@ public class ReturnInstruction extends TreeBuilder{
         if(!isValid(tokens))
             return super.build(tokens);
 
-        ASTNode root = new ASTNode(Token.RETURN_KW);
-        int indexOfEOL = tokens.indexOf(Token.EOL);
+        ASTNode root = new ASTNode(tokens.get(0));
+        int indexOfEOL = tokens.indexOf(
+                tokens.stream()
+                        .filter(e -> TokenKind.EOL.equals(e.kind))
+                        .findFirst().orElse(null)
+        );
 
-        if(!Token.EOL.equals(tokens.get(1))){
+        if(!TokenKind.EOL.equals(tokens.get(1).kind)){
             Result<ASTNode> res = evaluator.buildTree(tokens.subList(1, indexOfEOL));
 
             if(res.isFailure())

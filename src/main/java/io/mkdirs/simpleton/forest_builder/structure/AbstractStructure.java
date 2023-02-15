@@ -5,6 +5,7 @@ import io.mkdirs.simpleton.evaluator.ASTNode;
 import io.mkdirs.simpleton.forest_builder.TreeBuilder;
 import io.mkdirs.simpleton.forest_builder.TreeBuilderResult;
 import io.mkdirs.simpleton.model.token.Token;
+import io.mkdirs.simpleton.model.token.TokenKind;
 import io.mkdirs.simpleton.result.Result;
 
 import java.util.List;
@@ -31,7 +32,7 @@ public abstract class AbstractStructure extends TreeBuilder {
         while( end == null && !temp.isEmpty()){
 
 
-            if(Token.R_BRACKET.equals(temp.get(0))){
+            if(TokenKind.R_BRACKET.equals(temp.get(0).kind)){
                 end = new ASTNode(null);
                 continue;
             }
@@ -56,7 +57,7 @@ public abstract class AbstractStructure extends TreeBuilder {
 
 
 
-        if(Simpleton.match(temp, "right_bracket eol"))
+        if(Simpleton.match(temp, "r_bracket eol"))
             jmp += 2;
         else
             jmp += 1;

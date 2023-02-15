@@ -6,8 +6,10 @@ import io.mkdirs.simpleton.evaluator.ExpressionEvaluator;
 import io.mkdirs.simpleton.forest_builder.TreeBuilder;
 import io.mkdirs.simpleton.forest_builder.TreeBuilderResult;
 import io.mkdirs.simpleton.model.token.Token;
+import io.mkdirs.simpleton.model.token.TokenKind;
 import io.mkdirs.simpleton.model.token.composite.Func;
 import io.mkdirs.simpleton.model.token.composite.VariableName;
+import io.mkdirs.simpleton.model.token.keword.FunctionKW;
 import io.mkdirs.simpleton.result.Result;
 
 import java.util.List;
@@ -28,8 +30,8 @@ public class FunctionStructure extends AbstractStructure {
     @Override
     protected boolean isValid(List<Token> tokens) {
         return (
-                Simpleton.match(tokens, "def_kw function_kw func colon type do_kw left_bracket eol")
-                || Simpleton.match(tokens, "def_kw function_kw func colon void_kw do_kw left_bracket eol")
+                Simpleton.match(tokens, "def_kw function_kw func colon type do_kw l_bracket eol")
+                || Simpleton.match(tokens, "def_kw function_kw func colon void_kw do_kw l_bracket eol")
         );
     }
 
@@ -37,7 +39,7 @@ public class FunctionStructure extends AbstractStructure {
         if(params.isEmpty())
             return true;
 
-        Token expectedToken = Token.VARIABLE_NAME;
+        TokenKind expectedTokenKind = TokenKind.VAR_NAME;
         boolean expectType = false;
         boolean loop = true;
         int i = 0;
@@ -46,24 +48,24 @@ public class FunctionStructure extends AbstractStructure {
             Token token = params.get(i);
 
 
-            if(expectedToken.equals(token) && !expectType) {
-                if (Token.VARIABLE_NAME.equals(token)) {
-                    expectedToken = Token.COLON;
-                } else if (Token.COLON.equals(token)) {
+            if(expectedTokenKind.equals(token.kind) && !expectType) {
+                if (TokenKind.VAR_NAME.equals(token.kind)) {
+                    expectedTokenKind = TokenKind.COLON;
+                } else if (TokenKind.COLON.equals(token.kind)) {
                     expectType = true;
-                } else if (Token.COMMA.equals(token)) {
-                    expectedToken = Token.VARIABLE_NAME;
+                } else if (TokenKind.COMMA.equals(token.kind)) {
+                    expectedTokenKind = TokenKind.VAR_NAME;
                 }
-            }else if("TYPE".equals(token.group()) && expectType) {
+            }else if(token.kind.group.contains("type") && expectType) {
                 expectType = false;
-                expectedToken = Token.COMMA;
+                expectedTokenKind = TokenKind.COMMA;
             }else{
                 loop = false;
             }
             i++;
         }
 
-        if(! "TYPE".equals(params.get(i-1).group()))
+        if(! params.get(i-1).kind.group.contains("type"))
             return false;
 
         return loop;
@@ -74,7 +76,7 @@ public class FunctionStructure extends AbstractStructure {
         if(!isValid(tokens))
             return super.build(tokens);
 
-        ASTNode root = new ASTNode(Token.DEF_KW);
+        ASTNode root = new ASTNode(tokens.get(0));
         Func func = (Func) tokens.get(2);
 
 
@@ -82,20 +84,20 @@ public class FunctionStructure extends AbstractStructure {
         if(!validParams(params))
             return new TreeBuilderResult(Result.failure("Cannot resolve function parameters"), 0);
 
-        ASTNode function = new ASTNode(Token.FUNCTION_KW);
+        ASTNode function = new ASTNode(new FunctionKW());
 
         //Add the name
-        function.addChild(new ASTNode(new VariableName(func.getLiteral())));
+        function.addChild(new ASTNode(new VariableName(func.name)));
 
         //Add the parameters
         Token name = null;
         for(Token token : params){
-            if(Token.L_PAREN.equals(token) || Token.R_PAREN.equals(token))
+            if(TokenKind.L_PAREN.equals(token.kind) || TokenKind.R_PAREN.equals(token.kind))
                 continue;
 
-            if(Token.VARIABLE_NAME.equals(token)){
+            if(TokenKind.VAR_NAME.equals(token.kind)){
                 name = token;
-            }else if("TYPE".equals(token.group())){
+            }else if(token.kind.group.contains("type")){
                 ASTNode param = new ASTNode(name);
                 param.addChild(new ASTNode(token));
 
@@ -104,13 +106,21 @@ public class FunctionStructure extends AbstractStructure {
         }
 
         //Add the return type
-        int indexOfColon = tokens.indexOf(Token.COLON);
+        int indexOfColon = tokens.indexOf(
+                tokens.stream()
+                        .filter(e -> TokenKind.COLON.equals(e.kind))
+                        .findFirst().orElse(null)
+        );
         Token returnType = tokens.get(indexOfColon+1);
         function.addChild(new ASTNode(returnType));
 
 
         //Add the body of the function
-        int indexOfEOL = tokens.indexOf(Token.EOL);
+        int indexOfEOL = tokens.indexOf(
+                tokens.stream()
+                        .filter(e -> TokenKind.EOL.equals(e.kind))
+                        .findFirst().orElse(null)
+        );
         int jmp = indexOfEOL+1;
         TreeBuilderResult bodyResult = buildBody(tokens.subList(jmp, tokens.size()));
 

@@ -1,13 +1,9 @@
 package io.mkdirs.simpleton.model.token.keword;
 
 import io.mkdirs.simpleton.model.token.Token;
+import io.mkdirs.simpleton.model.token.TokenKind;
 
 public class ThenKW extends Token {
 
-    public ThenKW(){super("THEN_KW", "then");}
-
-    @Override
-    public boolean isKeyword() {
-        return true;
-    }
+    public ThenKW(){super(TokenKind.THEN_KW);}
 }

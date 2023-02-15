@@ -1,18 +1,11 @@
 package io.mkdirs.simpleton.model.token.literal;
 
-import io.mkdirs.simpleton.model.token.Token;
+import io.mkdirs.simpleton.model.token.TokenKind;
 
-public class BooleanLiteral extends Token {
+public class BooleanLiteral extends LiteralValueToken {
 
 
-    public BooleanLiteral(String literal) {
-        super("BOOLEAN_LITERAL", literal);
-    }
-
-    public BooleanLiteral(){this(null);}
-
-    @Override
-    public boolean isKeyword() {
-        return false;
+    public BooleanLiteral(String value) {
+        super(TokenKind.BOOL_LITERAL, value);
     }
 }

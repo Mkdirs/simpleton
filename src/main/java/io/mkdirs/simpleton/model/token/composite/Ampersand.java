@@ -1,15 +1,12 @@
 package io.mkdirs.simpleton.model.token.composite;
 
 import io.mkdirs.simpleton.model.token.Token;
+import io.mkdirs.simpleton.model.token.TokenKind;
 
 public class Ampersand extends Token implements IComposable{
 
-    public Ampersand(){super("AMPERSAND", "&");}
+    public Ampersand(){super(TokenKind.AMPERSAND);}
 
-    @Override
-    public boolean isKeyword() {
-        return false;
-    }
 
     @Override
     public Token compose(Token token) {

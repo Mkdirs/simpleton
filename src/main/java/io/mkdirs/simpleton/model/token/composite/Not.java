@@ -1,19 +1,16 @@
 package io.mkdirs.simpleton.model.token.composite;
 
 import io.mkdirs.simpleton.model.token.Token;
+import io.mkdirs.simpleton.model.token.TokenKind;
 
 public class Not extends Token implements IComposable{
 
-    public Not(){super("NOT", "!");}
+    public Not(){super(TokenKind.NOT);}
 
-    @Override
-    public boolean isKeyword() {
-        return false;
-    }
 
     @Override
     public Token compose(Token token) {
-        if(Token.EQUALS.equals(token))
+        if(TokenKind.EQUALS.equals(token.kind))
             return new Inequality();
 
         return null;

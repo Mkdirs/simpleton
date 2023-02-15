@@ -1,18 +1,9 @@
 package io.mkdirs.simpleton.model.token.keword;
 
 import io.mkdirs.simpleton.model.token.Token;
+import io.mkdirs.simpleton.model.token.TokenKind;
 
 public class BoolKW extends Token {
 
-    public BoolKW(){super("BOOL_KW", "bool");}
-
-    @Override
-    public boolean isKeyword() {
-        return true;
-    }
-
-    @Override
-    public String group() {
-        return "TYPE";
-    }
+    public BoolKW(){super(TokenKind.BOOL_KW);}
 }

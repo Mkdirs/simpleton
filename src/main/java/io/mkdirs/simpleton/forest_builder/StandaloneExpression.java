@@ -4,6 +4,7 @@ import io.mkdirs.simpleton.application.Simpleton;
 import io.mkdirs.simpleton.evaluator.ASTNode;
 import io.mkdirs.simpleton.evaluator.ExpressionEvaluator;
 import io.mkdirs.simpleton.model.token.Token;
+import io.mkdirs.simpleton.model.token.TokenKind;
 import io.mkdirs.simpleton.result.Result;
 
 import java.util.List;
@@ -33,7 +34,11 @@ public class StandaloneExpression extends TreeBuilder{
         if(!isValid(tokens))
             return super.build(tokens);
 
-        int indexOfEOL = tokens.indexOf(Token.EOL);
+        int indexOfEOL = tokens.indexOf(
+                tokens.stream()
+                        .filter(e -> TokenKind.EOL.equals(e.kind))
+                        .findFirst().orElse(null)
+        );
 
         Result<ASTNode> res = evaluator.buildTree(tokens.subList(0, indexOfEOL));
 

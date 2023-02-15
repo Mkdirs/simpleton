@@ -1,24 +1,25 @@
 package io.mkdirs.simpleton.model;
 
 import io.mkdirs.simpleton.model.token.Token;
+import io.mkdirs.simpleton.model.token.TokenKind;
 
 import java.util.Arrays;
 
 public enum Type {
-    BOOLEAN(Token.BOOLEAN_LITERAL, Token.BOOL_KW),
-    CHARACTER(Token.CHARACTER_LITERAL, Token.CHAR_KW),
-    FLOAT(Token.FLOAT_LITERAL, Token.FLOAT_KW),
-    INTEGER(Token.INTEGER_LITERAL, Token.INT_KW),
-    STRING(Token.STRING_LITERAL, Token.STRING_KW),
-    VOID(Token.VOID_KW),
-    NULL(Token.NULL_KW);
-    private final Token[] tokens;
-    private Type(Token... tokens){
-        this.tokens = tokens;
+    BOOLEAN(TokenKind.BOOL_LITERAL, TokenKind.BOOL_KW),
+    CHARACTER(TokenKind.CHAR_LITERAL, TokenKind.CHAR_KW),
+    FLOAT(TokenKind.FLOAT_LITERAL, TokenKind.FLOAT_KW),
+    INTEGER(TokenKind.INT_LITERAL, TokenKind.INT_KW),
+    STRING(TokenKind.STRING_LITERAL, TokenKind.STRING_KW),
+    VOID(TokenKind.VOID_KW),
+    NULL(TokenKind.NULL_KW);
+    private final TokenKind[] tokenKinds;
+    private Type(TokenKind... tokenKinds){
+        this.tokenKinds = tokenKinds;
     }
 
-    public static Type typeOf(Token token){
-        var res = Arrays.stream(Type.values()).filter(e -> Arrays.stream(e.tokens).anyMatch(e2 -> e2.equals(token))).findFirst();
+    public static Type typeOf(TokenKind tokenKind){
+        var res = Arrays.stream(Type.values()).filter(e -> Arrays.stream(e.tokenKinds).anyMatch(e2 -> e2.equals(tokenKind))).findFirst();
 
         if(res.isPresent())
             return res.get();
