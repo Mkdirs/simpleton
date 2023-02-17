@@ -53,7 +53,7 @@ public class ExpressionEvaluator extends ResultProvider {
                     return funcRes;
 
 
-                Result<FuncSignature> signatureResult = this.scopeContext.getFunctionSign(func, expectedReturn);
+                Result<FuncSignature> signatureResult = this.scopeContext.getFunctionSign(func);
 
                 if(signatureResult.isFailure())
                     return Result.failure(signatureResult.getMessage());
@@ -61,7 +61,7 @@ public class ExpressionEvaluator extends ResultProvider {
                 FuncSignature signature = signatureResult.get();
 
                 if(expectedReturn != null && !Type.VOID.equals(expectedReturn) && Type.VOID.equals(signature.getReturnType()))
-                    return Result.failure("No value returned !");
+                    return Result.failure("Expected a return value but "+signature+" has return type "+Type.VOID);
 
                 Result<LiteralValueToken> res;
 
@@ -104,13 +104,13 @@ public class ExpressionEvaluator extends ResultProvider {
 
 
 
-        Result<LiteralValueToken> left = evaluate(tree.left(), expectedReturn);
+        Result<LiteralValueToken> left = evaluate(tree.left());
 
         if(left.isFailure())
             return pushError(left.getMessage());
 
 
-        Result<LiteralValueToken> right = evaluate(tree.right(), expectedReturn);
+        Result<LiteralValueToken> right = evaluate(tree.right());
 
         if(right.isFailure())
             return pushError(right.getMessage());
@@ -123,6 +123,10 @@ public class ExpressionEvaluator extends ResultProvider {
             Optional<LiteralValueToken> r = operator.get().evaluate(left.get(), right.get());
             if(r.isEmpty())
                 return pushError("Unable to apply '"+operator.get().getTokenKind().literal+"' on '"+left.get()+"' and '"+right.get()+"'");
+
+            if(expectedReturn != null && !expectedReturn.equals(Type.typeOf(r.get().kind))){
+                return pushError("Unexpected error: should return '"+expectedReturn+"' but instead returned '"+Type.typeOf(r.get().kind)+"'");
+            }
 
             return Result.success(r.get());
         }

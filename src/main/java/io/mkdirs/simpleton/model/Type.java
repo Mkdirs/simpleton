@@ -12,7 +12,8 @@ public enum Type {
     INTEGER(TokenKind.INT_LITERAL, TokenKind.INT_KW),
     STRING(TokenKind.STRING_LITERAL, TokenKind.STRING_KW),
     VOID(TokenKind.VOID_KW),
-    NULL(TokenKind.NULL_KW);
+    NULL(TokenKind.NULL_KW),
+    UNKNOWN();
     private final TokenKind[] tokenKinds;
     private Type(TokenKind... tokenKinds){
         this.tokenKinds = tokenKinds;

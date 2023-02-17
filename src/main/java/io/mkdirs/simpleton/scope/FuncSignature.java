@@ -78,6 +78,17 @@ public class FuncSignature {
         return Objects.hash(name, args, returnType);
     }
 
+    public boolean partialEquals(FuncSignature other){
+        if(other == null)
+            return false;
+
+        Type[] signatureTypes = args.values().toArray(Type[]::new);
+        Type[] candidateTypes = other.args.values().toArray(Type[]::new);
+
+
+        return name.equals(other.name) && Arrays.equals(signatureTypes, candidateTypes);
+    }
+
     @Override
     public boolean equals(Object obj) {
         if(obj == null)
@@ -88,15 +99,11 @@ public class FuncSignature {
 
         FuncSignature other = (FuncSignature) obj;
 
-        Type[] signatureTypes = args.values().toArray(Type[]::new);
-        Type[] candidateTypes = other.args.values().toArray(Type[]::new);
-
-
-        return name.equals(other.name) && Arrays.equals(signatureTypes, candidateTypes) && returnType.equals(other.returnType);
+        return partialEquals(other) && returnType.equals(other.returnType);
     }
 
     @Override
     public String toString() {
-        return name+"(" + String.join(", ", args.entrySet().stream().map(e -> e.getKey()+":"+e.getValue().name()).collect(Collectors.toList())) + ") : "+returnType;
+        return name+"(" + args.values().stream().map(e -> e.name()).collect(Collectors.joining(", ")) + ")";
     }
 }

@@ -92,7 +92,7 @@ public class Simpleton {
 
             } else if (TokenKind.LET_KW.equals(left.getToken().kind)) {
                 String varName = ((VariableName)left.left().getToken()).name;
-                Type type = left.right() != null ? Type.typeOf(left.right().getToken().kind) : null;
+                Type type = left.right() != null ? Type.typeOf(left.right().getToken().kind) : Type.UNKNOWN;
 
                 if (currentScope.getVariable(varName).isPresent()) {
                     return Result.failure("Variable " + varName + " is already declared !");
@@ -104,11 +104,11 @@ public class Simpleton {
                     return Result.failure(exprRes.getMessage());
                 }
 
-                if (type == null) {
+                if (Type.UNKNOWN.equals(type)) {
                     type = Type.typeOf(exprRes.get().kind);
                     if (Type.NULL.equals(type)) {
                         if(TokenKind.FUNC.equals(node.right().getToken().kind)){
-                            var signature = this.currentScope.getFunctionSign((Func) node.right().getToken(), null).get();
+                            var signature = this.currentScope.getFunctionSign((Func) node.right().getToken()).get();
                             type = signature.getReturnType();
                         }else
                             return Result.failure("Cannot infer type of variable " + varName);
@@ -125,7 +125,7 @@ public class Simpleton {
             }
 
         }else if(TokenKind.IF_KW.equals(node.getToken().kind)) {
-            Result<LiteralValueToken> exprRes = evaluator.evaluate(node.get(0), Type.BOOLEAN);
+            Result<LiteralValueToken> exprRes = evaluator.evaluate(node.get(0));
             if (exprRes.isFailure()) {
                 return Result.failure(exprRes.getMessage());
             }
@@ -159,7 +159,7 @@ public class Simpleton {
 
         }else if(TokenKind.WHILE_KW.equals(node.getToken().kind)) {
 
-            Result<LiteralValueToken> exprRes = evaluator.evaluate(node.get(0), Type.BOOLEAN);
+            Result<LiteralValueToken> exprRes = evaluator.evaluate(node.get(0));
             if (exprRes.isFailure()) {
                 return Result.failure(exprRes.getMessage());
             }
@@ -182,7 +182,7 @@ public class Simpleton {
                     return result;
 
 
-                exprRes = evaluator.evaluate(node.get(0), Type.BOOLEAN);
+                exprRes = evaluator.evaluate(node.get(0));
                 if (exprRes.isFailure()) {
                     return Result.failure(exprRes.getMessage());
                 }
