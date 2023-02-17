@@ -38,7 +38,7 @@ public class Lexer extends ResultProvider {
 
 
             var charMatch = Arrays.stream(TokenKind.values())
-                    .filter(TokenKind::hasLiteral)
+                    .filter(TokenKind::isSingleChar)
                     .filter(e -> !e.isKeyword())
                     .filter(e -> car.equals(e.literal.charAt(0)))
                     .findFirst();
@@ -72,7 +72,6 @@ public class Lexer extends ResultProvider {
 
             }else{
                 var textualMatch = Arrays.stream(TokenKind.values())
-                        .filter(TokenKind::hasLiteral)
                         .filter(TokenKind::isKeyword)
                         .filter(e -> isText(e.literal))
                         .findFirst();

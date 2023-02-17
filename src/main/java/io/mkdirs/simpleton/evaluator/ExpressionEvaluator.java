@@ -30,7 +30,7 @@ public class ExpressionEvaluator extends ResultProvider {
     public void setScopeContext(ScopeContext scopeContext){this.scopeContext = scopeContext;}
 
 
-    public Result<LiteralValueToken> evaluate(ASTNode tree, boolean assignVariable){
+    public Result<LiteralValueToken> evaluate(ASTNode tree, Type expectedReturn){
         if(tree == null)
             return Result.success(null);
 
@@ -53,15 +53,14 @@ public class ExpressionEvaluator extends ResultProvider {
                     return funcRes;
 
 
-                //Todo: Handle case when an argument is null
-                Result<FuncSignature> signatureResult = this.scopeContext.getFunctionSign(func);
+                Result<FuncSignature> signatureResult = this.scopeContext.getFunctionSign(func, expectedReturn);
 
                 if(signatureResult.isFailure())
                     return Result.failure(signatureResult.getMessage());
 
                 FuncSignature signature = signatureResult.get();
 
-                if(assignVariable && Type.VOID.equals(signature.getReturnType()))
+                if(expectedReturn != null && !Type.VOID.equals(expectedReturn) && Type.VOID.equals(signature.getReturnType()))
                     return Result.failure("No value returned !");
 
                 Result<LiteralValueToken> res;
@@ -105,13 +104,13 @@ public class ExpressionEvaluator extends ResultProvider {
 
 
 
-        Result<LiteralValueToken> left = evaluate(tree.left());
+        Result<LiteralValueToken> left = evaluate(tree.left(), expectedReturn);
 
         if(left.isFailure())
             return pushError(left.getMessage());
 
 
-        Result<LiteralValueToken> right = evaluate(tree.right());
+        Result<LiteralValueToken> right = evaluate(tree.right(), expectedReturn);
 
         if(right.isFailure())
             return pushError(right.getMessage());
@@ -131,7 +130,7 @@ public class ExpressionEvaluator extends ResultProvider {
         return pushError("Unknown operator: \""+tree.getToken().kind.literal+"\"");
     }
 
-    public Result<LiteralValueToken> evaluate(ASTNode tree){return evaluate(tree, false);}
+    public Result<LiteralValueToken> evaluate(ASTNode tree){return evaluate(tree, null);}
 
     private Optional<Operator> getOperator(TokenKind tokenKind){
         return Arrays.stream(Operator.OPERATORS).filter(e  -> e.getTokenKind().equals(tokenKind)).findFirst();
@@ -157,7 +156,12 @@ public class ExpressionEvaluator extends ResultProvider {
 
         Token operator = tokens.get(mainOperatorIndex);
         Result<ASTNode> left = buildTree(tokens.subList(0, mainOperatorIndex));
+        if(left.isFailure())
+            return left;
+
         Result<ASTNode> right = buildTree(tokens.subList(mainOperatorIndex+1, tokens.size()));
+        if(right.isFailure())
+            return right;
 
         ASTNode tree = new ASTNode(operator);
         tree.addChild(left.get());

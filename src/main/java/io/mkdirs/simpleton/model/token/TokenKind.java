@@ -66,8 +66,9 @@ public enum TokenKind {
     TokenKind(String literal){this(literal, "");}
     TokenKind(){this("", "");}
     public boolean isKeyword(){
-        return group.contains("keyword");
+        return  hasLiteral() && group.contains("keyword");
     }
     public boolean hasLiteral(){return !literal.isEmpty();}
+    public boolean isSingleChar(){return hasLiteral() && literal.length() == 1;}
 
 }

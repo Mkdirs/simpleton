@@ -68,7 +68,7 @@ public class Simpleton {
             currentScope.pushVariable(varName, type);
         }else if(TokenKind.EQUALS.equals(node.getToken().kind)) {
             ASTNode left = node.left();
-            Result<LiteralValueToken> exprRes = evaluator.evaluate(node.right(), true);
+            //Result<LiteralValueToken> exprRes = evaluator.evaluate(node.right(), true);
 
             if (TokenKind.VAR_NAME.equals(left.getToken().kind)) {
                 String varName = ((VariableName)left.getToken()).name;
@@ -76,11 +76,15 @@ public class Simpleton {
                     return Result.failure("Undeclared variable " + varName + " !");
                 }
 
+
+
+                VariableHolder varHolder = currentScope.getVariable(varName).get();
+                Result<LiteralValueToken> exprRes = evaluator.evaluate(node.right(), varHolder.getType());
+
                 if (exprRes.isFailure()) {
                     return Result.failure(exprRes.getMessage());
                 }
 
-                VariableHolder varHolder = currentScope.getVariable(varName).get();
                 if (!varHolder.getType().equals(Type.typeOf(exprRes.get().kind)) && !Type.NULL.equals(Type.typeOf(exprRes.get().kind))) {
                     return Result.failure("Expected type " + varHolder.getType() + " but instead got " + Type.typeOf(exprRes.get().kind));
                 }
@@ -94,6 +98,8 @@ public class Simpleton {
                     return Result.failure("Variable " + varName + " is already declared !");
                 }
 
+                Result<LiteralValueToken> exprRes = evaluator.evaluate(node.right(), type);
+
                 if (exprRes.isFailure()) {
                     return Result.failure(exprRes.getMessage());
                 }
@@ -102,7 +108,7 @@ public class Simpleton {
                     type = Type.typeOf(exprRes.get().kind);
                     if (Type.NULL.equals(type)) {
                         if(TokenKind.FUNC.equals(node.right().getToken().kind)){
-                            var signature = this.currentScope.getFunctionSign((Func) node.right().getToken()).get();
+                            var signature = this.currentScope.getFunctionSign((Func) node.right().getToken(), null).get();
                             type = signature.getReturnType();
                         }else
                             return Result.failure("Cannot infer type of variable " + varName);
@@ -119,7 +125,7 @@ public class Simpleton {
             }
 
         }else if(TokenKind.IF_KW.equals(node.getToken().kind)) {
-            Result<LiteralValueToken> exprRes = evaluator.evaluate(node.get(0));
+            Result<LiteralValueToken> exprRes = evaluator.evaluate(node.get(0), Type.BOOLEAN);
             if (exprRes.isFailure()) {
                 return Result.failure(exprRes.getMessage());
             }
@@ -153,7 +159,7 @@ public class Simpleton {
 
         }else if(TokenKind.WHILE_KW.equals(node.getToken().kind)) {
 
-            Result<LiteralValueToken> exprRes = evaluator.evaluate(node.get(0));
+            Result<LiteralValueToken> exprRes = evaluator.evaluate(node.get(0), Type.BOOLEAN);
             if (exprRes.isFailure()) {
                 return Result.failure(exprRes.getMessage());
             }
@@ -176,7 +182,7 @@ public class Simpleton {
                     return result;
 
 
-                exprRes = evaluator.evaluate(node.get(0));
+                exprRes = evaluator.evaluate(node.get(0), Type.BOOLEAN);
                 if (exprRes.isFailure()) {
                     return Result.failure(exprRes.getMessage());
                 }

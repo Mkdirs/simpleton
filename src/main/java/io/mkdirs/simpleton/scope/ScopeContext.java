@@ -68,13 +68,23 @@ public class ScopeContext {
         return this.functions.contains(signature);
     }
 
-    public Result<FuncSignature> getFunctionSign(Func func) throws IllegalStateException{
+    public Result<FuncSignature> getFunctionSign(Func func, Type returnType) throws IllegalStateException{
         if(!func.areArgsComputed())
             throw new IllegalStateException("Function "+func+" has not computed its arguments !");
 
-        var candidates = this.functions.stream()
-                .filter(e -> e.match(func)).toList();
-                //.findFirst();
+
+        List<FuncSignature> candidates;
+
+
+        if(returnType != null){
+            candidates = this.functions.stream()
+                    .filter(e -> e.match(func) && e.getReturnType().equals(returnType))
+                    .toList();
+        }else{
+            candidates = this.functions.stream()
+                    .filter(e -> e.match(func))
+                    .toList();
+        }
 
         if(candidates.size() == 1)
             return Result.success(candidates.get(0));
@@ -83,7 +93,7 @@ public class ScopeContext {
             return Result.failure("Cannot determine the signature of '"+func.toText()+"'");
 
         if(this.parent != null)
-            return this.parent.getFunctionSign(func);
+            return this.parent.getFunctionSign(func, returnType);
 
         return Result.failure("Function '"+(func.toText())+"' does not exist");
     }
