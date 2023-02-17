@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Optional;
 
 public class Operator {
-    //TODO: add null handling
     public static final Operator[] OPERATORS = new Operator[]{
             new Operator(TokenKind.PLUS, 3)
                     .acceptTypes(Operand.with(TokenKind.INT_LITERAL), Operand.with(TokenKind.INT_LITERAL), (a, b) ->{
@@ -291,7 +290,9 @@ public class Operator {
 
 
     public Optional<LiteralValueToken> evaluate(LiteralValueToken left, LiteralValueToken right){
-        Optional<Context> ctx = this.contexts.stream().filter(e -> e.getLeft().match(left.kind) && e.getRight().match(right.kind)).findFirst();
+        TokenKind l = left == null ? null : left.kind;
+        TokenKind r = right == null ? null : right.kind;
+        Optional<Context> ctx = this.contexts.stream().filter(e -> e.getLeft().match(l) && e.getRight().match(r)).findFirst();
 
         if(ctx.isEmpty())
             return Optional.empty();

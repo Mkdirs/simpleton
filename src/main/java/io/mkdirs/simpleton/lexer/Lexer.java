@@ -484,7 +484,6 @@ public class Lexer extends ResultProvider {
         }
 
         if(value.length() == 2 && value.startsWith("\\")){
-            System.out.println(value);
             value = "\\"+value.charAt(1);
 
         }else if(value.length() > 1){

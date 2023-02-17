@@ -29,7 +29,7 @@ public class Operand {
         if(this.equals(NOTHING))
             return (t == null);
 
-        return this.tokenKind.equals(t);
+        return tokenKind.equals(t);
     }
 
     public TokenKind getTokenKind() {

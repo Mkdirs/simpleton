@@ -6,6 +6,7 @@ import io.mkdirs.simpleton.model.Type;
 import io.mkdirs.simpleton.model.token.Token;
 import io.mkdirs.simpleton.model.token.composite.Func;
 import io.mkdirs.simpleton.model.token.literal.LiteralValueToken;
+import io.mkdirs.simpleton.result.Result;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -67,21 +68,24 @@ public class ScopeContext {
         return this.functions.contains(signature);
     }
 
-    public Optional<FuncSignature> getFunctionSign(Func func) throws IllegalStateException{
+    public Result<FuncSignature> getFunctionSign(Func func) throws IllegalStateException{
         if(!func.areArgsComputed())
             throw new IllegalStateException("Function "+func+" has not computed its arguments !");
 
-        Optional<FuncSignature> opt = this.functions.stream()
-                .filter(e -> e.match(func))
-                .findFirst();
+        var candidates = this.functions.stream()
+                .filter(e -> e.match(func)).toList();
+                //.findFirst();
 
-        if(opt.isPresent())
-            return opt;
+        if(candidates.size() == 1)
+            return Result.success(candidates.get(0));
+
+        if(candidates.size() > 1)
+            return Result.failure("Cannot determine the signature of '"+func.toText()+"'");
 
         if(this.parent != null)
             return this.parent.getFunctionSign(func);
 
-        return Optional.empty();
+        return Result.failure("Function '"+(func.toText())+"' does not exist");
     }
 
     public void pushVariable(String name, Type type, LiteralValueToken value){

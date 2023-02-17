@@ -53,11 +53,13 @@ public class ExpressionEvaluator extends ResultProvider {
                     return funcRes;
 
 
+                //Todo: Handle case when an argument is null
+                Result<FuncSignature> signatureResult = this.scopeContext.getFunctionSign(func);
 
-                FuncSignature signature = this.scopeContext.getFunctionSign(func).orElse(null);
+                if(signatureResult.isFailure())
+                    return Result.failure(signatureResult.getMessage());
 
-                if(signature == null)
-                    return Result.failure("Function '"+(func.toText())+"' does not exist");
+                FuncSignature signature = signatureResult.get();
 
                 if(assignVariable && Type.VOID.equals(signature.getReturnType()))
                     return Result.failure("No value returned !");

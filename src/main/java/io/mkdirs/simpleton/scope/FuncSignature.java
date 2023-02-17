@@ -54,8 +54,23 @@ public class FuncSignature {
         if(args.size() != other.getArgs().size())
             return false;
 
+        Type[] signatureTypes = args.values().toArray(Type[]::new);
+        Type[] candidateTypes = other.getArgs().stream().map(e -> Type.typeOf(e.kind)).toArray(Type[]::new);
+        boolean valid = true;
+        int i = 0;
+        while(valid && i < signatureTypes.length){
+            Type signature = signatureTypes[i];
+            Type candidate = candidateTypes[i];
+            if(!signature.equals(candidate) && !Type.NULL.equals(candidate)){
+                valid = false;
+                continue;
+            }
 
-        return Arrays.equals(args.values().toArray(Type[]::new), other.getArgs().stream().map(e -> Type.typeOf(e.kind)).toArray(Type[]::new));
+            i++;
+
+        }
+
+        return valid;//Arrays.equals(args.values().toArray(Type[]::new), other.getArgs().stream().map(e -> Type.typeOf(e.kind)).toArray(Type[]::new));
     }
 
     @Override
@@ -73,11 +88,15 @@ public class FuncSignature {
 
         FuncSignature other = (FuncSignature) obj;
 
-        return name.equals(other.name) && args.equals(other.args) && returnType.equals(other.returnType);
+        Type[] signatureTypes = args.values().toArray(Type[]::new);
+        Type[] candidateTypes = other.args.values().toArray(Type[]::new);
+
+
+        return name.equals(other.name) && Arrays.equals(signatureTypes, candidateTypes) && returnType.equals(other.returnType);
     }
 
     @Override
     public String toString() {
-        return name+"(" + String.join(", ", args.entrySet().stream().map(e -> e.getKey()+":"+e.getValue().name()).collect(Collectors.toList())) + ")";
+        return name+"(" + String.join(", ", args.entrySet().stream().map(e -> e.getKey()+":"+e.getValue().name()).collect(Collectors.toList())) + ") : "+returnType;
     }
 }
