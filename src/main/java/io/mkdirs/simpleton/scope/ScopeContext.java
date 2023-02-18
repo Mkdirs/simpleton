@@ -27,13 +27,7 @@ public class ScopeContext {
         this.parent = parent;
         this.id = id;
 
-        pushFunctionSign(new FuncSignature("print", new LinkedHashMap(Map.of("object", Type.STRING))));
-        pushFunctionSign(new FuncSignature("print", new LinkedHashMap(Map.of("object", Type.CHARACTER))));
-        pushFunctionSign(new FuncSignature("print", new LinkedHashMap(Map.of("object", Type.INTEGER))));
-        pushFunctionSign(new FuncSignature("print", new LinkedHashMap(Map.of("object", Type.FLOAT))));
-        pushFunctionSign(new FuncSignature("print", new LinkedHashMap(Map.of("object", Type.BOOLEAN))));
-
-
+        pushFunctionSign(new FuncSignature("print", new LinkedHashMap(Map.of("object", Type.ANY))));
         pushFunctionSign(new FuncSignature("input", new LinkedHashMap(Map.of("prompt", Type.STRING)), Type.STRING));
     }
 
