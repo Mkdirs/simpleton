@@ -94,6 +94,10 @@ public class ScopeContext {
         this.variables.put(name, new VariableHolder(type));
     }
 
+    public void flushVariables(){
+        this.variables.clear();
+    }
+
 
     public Optional<VariableHolder> getVariable(String name){
         if(this.variables.containsKey(name))

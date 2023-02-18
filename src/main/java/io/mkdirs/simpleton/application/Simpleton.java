@@ -192,6 +192,8 @@ public class Simpleton {
                     return Result.failure(exprRes.getMessage());
                 }
 
+                currentScope.flushVariables();
+
             }
 
 
