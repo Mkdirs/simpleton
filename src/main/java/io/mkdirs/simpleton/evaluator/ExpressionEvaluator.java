@@ -43,6 +43,9 @@ public class ExpressionEvaluator extends ResultProvider {
                 if(var == null)
                     return Result.failure("Variable '"+varName.name+"' does not exist");
 
+                if(expectedReturn != null && !Type.UNKNOWN.equals(expectedReturn) && !expectedReturn.equals(var.getType()))
+                    return Result.failure("Expected type "+expectedReturn+" but instead got "+var.getType());
+
                 return Result.success(var.getValue());
 
             }else if(TokenKind.FUNC.equals(token.kind)){
@@ -92,12 +95,20 @@ public class ExpressionEvaluator extends ResultProvider {
                 if(!signature.getReturnType().equals(Type.typeOf(tok.kind)) && !Type.NULL.equals(Type.typeOf(tok.kind)))
                     return Result.failure("Unexpected error: "+token.toText()+" should return '"+signature.getReturnType().name()+"' but instead returned '"+Type.typeOf(tok.kind)+"'");
 
+                if(expectedReturn != null && !Type.UNKNOWN.equals(expectedReturn) && !expectedReturn.equals(Type.typeOf(tok.kind)))
+                    return Result.failure("Expected type "+expectedReturn+" but instead got "+Type.typeOf(tok.kind));
+
+
                 return Result.success(res.get());
 
 
             }
             if(TokenKind.NULL_KW.equals(tree.getToken().kind))
                 return Result.success(NullPlaceholder.NULL);
+
+            if(expectedReturn != null && !Type.UNKNOWN.equals(expectedReturn) && !expectedReturn.equals(Type.typeOf(tree.getToken().kind)))
+                return Result.failure("Expected type "+expectedReturn+" but instead got "+Type.typeOf(tree.getToken().kind));
+
 
             return Result.success((LiteralValueToken) tree.getToken());
         }
@@ -124,9 +135,8 @@ public class ExpressionEvaluator extends ResultProvider {
             if(r.isEmpty())
                 return pushError("Unable to apply '"+operator.get().getTokenKind().literal+"' on '"+left.get()+"' and '"+right.get()+"'");
 
-            if(expectedReturn != null && !expectedReturn.equals(Type.typeOf(r.get().kind))){
-                return pushError("Unexpected error: should return '"+expectedReturn+"' but instead returned '"+Type.typeOf(r.get().kind)+"'");
-            }
+            if(expectedReturn != null && !Type.UNKNOWN.equals(expectedReturn) && !expectedReturn.equals(Type.typeOf(r.get().kind)))
+                return Result.failure("Expected type "+expectedReturn+" but instead got "+Type.typeOf(r.get().kind));
 
             return Result.success(r.get());
         }

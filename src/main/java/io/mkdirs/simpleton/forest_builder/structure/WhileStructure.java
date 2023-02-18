@@ -38,8 +38,16 @@ public class WhileStructure extends AbstractStructure {
 
         ASTNode root = new ASTNode(tokens.get(0));
 
-        Result<ASTNode> exprRes = evaluator.buildTree(tokens.subList(2, tokens.indexOf(
+        int indexOfEOL = tokens.indexOf(
                 tokens.stream()
+                        .filter(e -> TokenKind.EOL.equals(e.kind))
+                        .findFirst().orElse(null)
+        );
+
+        var firstLine = tokens.subList(0, indexOfEOL);
+
+        Result<ASTNode> exprRes = evaluator.buildTree(firstLine.subList(2, firstLine.lastIndexOf(
+                firstLine.stream()
                         .filter(e -> TokenKind.R_PAREN.equals(e.kind))
                         .findFirst().orElse(null)
         )));
@@ -47,11 +55,7 @@ public class WhileStructure extends AbstractStructure {
         if(exprRes.isFailure())
             return new TreeBuilderResult(exprRes, 0);
 
-        int indexOfEOL = tokens.indexOf(
-                tokens.stream()
-                        .filter(e -> TokenKind.EOL.equals(e.kind))
-                        .findFirst().orElse(null)
-        );
+
         int jmp = indexOfEOL+1;
         TreeBuilderResult bodyResult = buildBody(tokens.subList(jmp, tokens.size()));
 

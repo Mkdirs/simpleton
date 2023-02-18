@@ -85,9 +85,11 @@ public class Simpleton {
                     return Result.failure(exprRes.getMessage());
                 }
 
-                if (!varHolder.getType().equals(Type.typeOf(exprRes.get().kind)) && !Type.NULL.equals(Type.typeOf(exprRes.get().kind))) {
+                /*if (!varHolder.getType().equals(Type.typeOf(exprRes.get().kind)) && !Type.NULL.equals(Type.typeOf(exprRes.get().kind))) {
                     return Result.failure("Expected type " + varHolder.getType() + " but instead got " + Type.typeOf(exprRes.get().kind));
                 }
+
+                 */
                 currentScope.getVariable(varName).get().setValue(exprRes.get());
 
             } else if (TokenKind.LET_KW.equals(left.getToken().kind)) {
@@ -116,23 +118,22 @@ public class Simpleton {
                 }
 
 
-                if (!type.equals(Type.typeOf(exprRes.get().kind)) && !Type.NULL.equals(Type.typeOf(exprRes.get().kind))) {
-                    return Result.failure("Expected type " + type + " but instead got " + Type.typeOf(exprRes.get().kind));
+                /*if (!type.equals(Type.typeOf(exprRes.get().kind)) && !Type.NULL.equals(Type.typeOf(exprRes.get().kind))) {
+                    return Result.failure("totot Expected type " + type + " but instead got " + Type.typeOf(exprRes.get().kind));
                 }
+
+                 */
 
                 currentScope.pushVariable(varName, type, exprRes.get());
 
             }
 
         }else if(TokenKind.IF_KW.equals(node.getToken().kind)) {
-            Result<LiteralValueToken> exprRes = evaluator.evaluate(node.get(0));
+            Result<LiteralValueToken> exprRes = evaluator.evaluate(node.get(0), Type.BOOLEAN);
             if (exprRes.isFailure()) {
                 return Result.failure(exprRes.getMessage());
             }
 
-            if (!Type.BOOLEAN.equals(Type.typeOf(exprRes.get().kind))) {
-                return Result.failure("Expected type " + Type.BOOLEAN + " but instead got " + Type.typeOf(exprRes.get().kind));
-            }
 
             if ("true".equals(exprRes.get().value)) {
                 ASTNode body = node.get(1);
@@ -159,14 +160,11 @@ public class Simpleton {
 
         }else if(TokenKind.WHILE_KW.equals(node.getToken().kind)) {
 
-            Result<LiteralValueToken> exprRes = evaluator.evaluate(node.get(0));
+            Result<LiteralValueToken> exprRes = evaluator.evaluate(node.get(0), Type.BOOLEAN);
             if (exprRes.isFailure()) {
                 return Result.failure(exprRes.getMessage());
             }
 
-            if (!Type.BOOLEAN.equals(Type.typeOf(exprRes.get().kind))) {
-                return Result.failure("Expected type " + Type.BOOLEAN + " but instead got " + Type.typeOf(exprRes.get().kind));
-            }
 
             currentScope = currentScope.child();
             evaluator.setScopeContext(currentScope);
@@ -182,13 +180,9 @@ public class Simpleton {
                     return result;
 
 
-                exprRes = evaluator.evaluate(node.get(0));
+                exprRes = evaluator.evaluate(node.get(0), Type.BOOLEAN);
                 if (exprRes.isFailure()) {
                     return Result.failure(exprRes.getMessage());
-                }
-
-                if (!Type.BOOLEAN.equals(Type.typeOf(exprRes.get().kind))) {
-                    return Result.failure("Expected type " + Type.BOOLEAN + " but instead got " + Type.typeOf(exprRes.get().kind));
                 }
 
             }
