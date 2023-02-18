@@ -8,6 +8,7 @@ public enum TokenKind {
     STRING_KW("string","keyword type"),
     INT_KW("int","keyword type"),
     FLOAT_KW("float","keyword type"),
+    ANY_KW("any", "keyword type"),
     DEF_KW("def", "keyword"),
     DO_KW("do", "keyword"),
     ELSE_KW("else","keyword"),

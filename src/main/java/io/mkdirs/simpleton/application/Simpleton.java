@@ -90,11 +90,16 @@ public class Simpleton {
                 }
 
                  */
-                currentScope.getVariable(varName).get().setValue(exprRes.get());
+                VariableHolder v = currentScope.getVariable(varName).get();
+                if(Type.ANY.equals(v.getType())){
+                    Type t = Type.typeOf(exprRes.get().kind);
+                    currentScope.pushVariable(varName, t, exprRes.get());
+                }else
+                    currentScope.getVariable(varName).get().setValue(exprRes.get());
 
             } else if (TokenKind.LET_KW.equals(left.getToken().kind)) {
                 String varName = ((VariableName)left.left().getToken()).name;
-                Type type = left.right() != null ? Type.typeOf(left.right().getToken().kind) : Type.UNKNOWN;
+                Type type = left.right() != null ? Type.typeOf(left.right().getToken().kind) : Type.ANY;
 
                 if (currentScope.getVariable(varName).isPresent()) {
                     return Result.failure("Variable " + varName + " is already declared !");
@@ -106,11 +111,13 @@ public class Simpleton {
                     return Result.failure(exprRes.getMessage());
                 }
 
-                if (Type.UNKNOWN.equals(type)) {
+                if (Type.ANY.equals(type)) {
                     type = Type.typeOf(exprRes.get().kind);
                     if (Type.NULL.equals(type)) {
                         if(TokenKind.FUNC.equals(node.right().getToken().kind)){
                             var signature = this.currentScope.getFunctionSign((Func) node.right().getToken()).get();
+                            if(Type.ANY.equals(signature.getReturnType()))
+                                return Result.failure("Cannot infer type of variable " + varName);
                             type = signature.getReturnType();
                         }else
                             return Result.failure("Cannot infer type of variable " + varName);
@@ -275,7 +282,6 @@ public class Simpleton {
 
 
     public Result<List<ASTNode>> buildTrees(List<Token> tokens){
-
         List<ASTNode> res = new ArrayList<>();
         final TreeBuilder chain = new FullVariableInitialization(evaluator);
         chain.next(new PartialVariableInitialization(evaluator, chain))

@@ -17,7 +17,6 @@ import io.mkdirs.simpleton.scope.ScopeContext;
 import io.mkdirs.simpleton.scope.VariableHolder;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class ExpressionEvaluator extends ResultProvider {
 
@@ -43,7 +42,7 @@ public class ExpressionEvaluator extends ResultProvider {
                 if(var == null)
                     return Result.failure("Variable '"+varName.name+"' does not exist");
 
-                if(expectedReturn != null && !Type.UNKNOWN.equals(expectedReturn) && !expectedReturn.equals(var.getType()))
+                if(expectedReturn != null && !Type.ANY.equals(expectedReturn) && !expectedReturn.equals(var.getType()))
                     return Result.failure("Expected type "+expectedReturn+" but instead got "+var.getType());
 
                 return Result.success(var.getValue());
@@ -92,10 +91,10 @@ public class ExpressionEvaluator extends ResultProvider {
                 if(Type.VOID.equals(signature.getReturnType()) && !Type.VOID.equals(Type.typeOf(tok.kind)))
                     return Result.failure(token.toText()+" has a return type of "+Type.VOID+". You cannot return a value here");
 
-                if(!signature.getReturnType().equals(Type.typeOf(tok.kind)) && !Type.NULL.equals(Type.typeOf(tok.kind)))
+                if(!signature.getReturnType().equals(Type.typeOf(tok.kind)) && !Type.NULL.equals(Type.typeOf(tok.kind)) && !Type.ANY.equals(signature.getReturnType()))
                     return Result.failure("Unexpected error: "+token.toText()+" should return '"+signature.getReturnType().name()+"' but instead returned '"+Type.typeOf(tok.kind)+"'");
 
-                if(expectedReturn != null && !Type.UNKNOWN.equals(expectedReturn) && !expectedReturn.equals(Type.typeOf(tok.kind)))
+                if(expectedReturn != null && !Type.ANY.equals(expectedReturn) && !expectedReturn.equals(Type.typeOf(tok.kind)))
                     return Result.failure("Expected type "+expectedReturn+" but instead got "+Type.typeOf(tok.kind));
 
 
@@ -106,7 +105,7 @@ public class ExpressionEvaluator extends ResultProvider {
             if(TokenKind.NULL_KW.equals(tree.getToken().kind))
                 return Result.success(NullPlaceholder.NULL);
 
-            if(expectedReturn != null && !Type.UNKNOWN.equals(expectedReturn) && !expectedReturn.equals(Type.typeOf(tree.getToken().kind)))
+            if(expectedReturn != null && !Type.ANY.equals(expectedReturn) && !expectedReturn.equals(Type.typeOf(tree.getToken().kind)))
                 return Result.failure("Expected type "+expectedReturn+" but instead got "+Type.typeOf(tree.getToken().kind));
 
 
@@ -133,9 +132,9 @@ public class ExpressionEvaluator extends ResultProvider {
         if(operator.isPresent()){
             Optional<LiteralValueToken> r = operator.get().evaluate(left.get(), right.get());
             if(r.isEmpty())
-                return pushError("Unable to apply '"+operator.get().getTokenKind().literal+"' on '"+left.get()+"' and '"+right.get()+"'");
+                return Result.failure("Unable to apply '"+operator.get().getTokenKind().literal+"' on '"+Type.typeOf(left.get().kind)+"' and '"+Type.typeOf(right.get().kind)+"'");
 
-            if(expectedReturn != null && !Type.UNKNOWN.equals(expectedReturn) && !expectedReturn.equals(Type.typeOf(r.get().kind)))
+            if(expectedReturn != null && !Type.ANY.equals(expectedReturn) && !expectedReturn.equals(Type.typeOf(r.get().kind)))
                 return Result.failure("Expected type "+expectedReturn+" but instead got "+Type.typeOf(r.get().kind));
 
             return Result.success(r.get());

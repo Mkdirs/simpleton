@@ -1,6 +1,5 @@
 package io.mkdirs.simpleton.model;
 
-import io.mkdirs.simpleton.model.token.Token;
 import io.mkdirs.simpleton.model.token.TokenKind;
 
 import java.util.Arrays;
@@ -13,7 +12,7 @@ public enum Type {
     STRING(TokenKind.STRING_LITERAL, TokenKind.STRING_KW),
     VOID(TokenKind.VOID_KW),
     NULL(TokenKind.NULL_KW),
-    UNKNOWN();
+    ANY(TokenKind.ANY_KW);
     private final TokenKind[] tokenKinds;
     private Type(TokenKind... tokenKinds){
         this.tokenKinds = tokenKinds;

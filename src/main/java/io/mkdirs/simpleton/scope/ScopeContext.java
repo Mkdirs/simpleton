@@ -74,13 +74,16 @@ public class ScopeContext {
             throw new IllegalStateException("Function "+func+" has not computed its arguments !");
 
 
-        var opt = this.functions.stream()
+        var candidates = this.functions.stream()
                 .filter(e -> e.match(func))
-                .findFirst();
+                .toList();
 
+        if(candidates.size() == 1)
+            return Result.success(candidates.get(0));
 
-        if(opt.isPresent())
-            return Result.success(opt.get());
+        if(candidates.size() > 1)
+            return Result.failure("Cannot determine signature of "+func.toText());
+
 
         if(this.parent != null)
             return this.parent.getFunctionSign(func);

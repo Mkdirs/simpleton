@@ -84,6 +84,7 @@ public class Lexer extends ResultProvider {
                         case STRING_KW -> tokens.add(new StringKW());
                         case INT_KW -> tokens.add(new IntKW());
                         case FLOAT_KW -> tokens.add(new FloatKW());
+                        case ANY_KW -> tokens.add(new AnyKW());
                         case DEF_KW -> tokens.add(new DefKW());
                         case DO_KW -> tokens.add(new DoKW());
                         case ELSE_KW -> tokens.add(new ElseKW());

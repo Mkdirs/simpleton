@@ -61,7 +61,7 @@ public class FuncSignature {
         while(valid && i < signatureTypes.length){
             Type signature = signatureTypes[i];
             Type candidate = candidateTypes[i];
-            if(!signature.equals(candidate) && !Type.NULL.equals(candidate)){
+            if(!signature.equals(candidate) && !Type.ANY.equals(signature) && !Type.NULL.equals(candidate)){
                 valid = false;
                 continue;
             }
