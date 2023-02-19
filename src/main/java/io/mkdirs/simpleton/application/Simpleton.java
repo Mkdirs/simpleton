@@ -3,6 +3,7 @@ package io.mkdirs.simpleton.application;
 import io.mkdirs.simpleton.evaluator.ASTNode;
 import io.mkdirs.simpleton.evaluator.ExpressionEvaluator;
 import io.mkdirs.simpleton.forest_builder.*;
+import io.mkdirs.simpleton.forest_builder.structure.ForStructure;
 import io.mkdirs.simpleton.forest_builder.structure.FunctionStructure;
 import io.mkdirs.simpleton.forest_builder.structure.IfStructure;
 import io.mkdirs.simpleton.forest_builder.structure.WhileStructure;
@@ -184,7 +185,7 @@ public class Simpleton {
                 result = execute(body.getChildren());
 
                 if (result.isFailure() || result.isTerminative())
-                    return result;
+                    break;
 
 
                 exprRes = evaluator.evaluate(node.get(0), Type.BOOLEAN);
@@ -198,6 +199,44 @@ public class Simpleton {
 
 
             currentScope = currentScope.getParent();
+            evaluator.setScopeContext(currentScope);
+
+            if (result != null)
+                return result;
+
+        }else if(TokenKind.FOR_KW.equals(node.getToken().kind)){
+            currentScope = currentScope.child();
+            evaluator.setScopeContext(currentScope);
+
+            var initRes = execute(node.get(0));
+            if(initRes.isFailure())
+                return initRes;
+
+
+            var condRes = evaluator.evaluate(node.get(1), Type.BOOLEAN);
+            if(condRes.isFailure())
+                return condRes;
+
+
+            currentScope = currentScope.child();
+            evaluator.setScopeContext(currentScope);
+            Result<LiteralValueToken> result = null;
+            while("true".equals(condRes.get().value)){
+                result = execute(node.get(2).getChildren());
+
+                if(result.isFailure() || result.isTerminative())
+                    break;
+
+                condRes = evaluator.evaluate(node.get(1), Type.BOOLEAN);
+
+                if(condRes.isFailure())
+                    return condRes;
+
+                currentScope.flushVariables();
+
+            }
+
+            currentScope = currentScope.getParent().getParent();
             evaluator.setScopeContext(currentScope);
 
             if(result != null)
@@ -291,6 +330,7 @@ public class Simpleton {
                 .next(new VariableAssignment(evaluator, chain))
                 .next(new IfStructure(evaluator, chain))
                 .next(new WhileStructure(evaluator, chain))
+                .next(new ForStructure(evaluator, chain))
                 .next(new FunctionStructure(chain))
                 .next(new ReturnInstruction(evaluator, chain))
                 .next(new StandaloneExpression(evaluator, chain));

@@ -20,6 +20,7 @@ public enum TokenKind {
     THEN_KW("then","keyword"),
     VOID_KW("void","keyword"),
     WHILE_KW("while","keyword"),
+    FOR_KW("for", "keyword"),
 
 
 

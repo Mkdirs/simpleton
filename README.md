@@ -163,6 +163,24 @@ while(expression) do {
 }
 ````
 
+- ## For loop
+````
+for (initialization, condition, statement) do {
+  ...
+  code
+  ...
+}
+````
+Example: printing n times "Hello world"
+````
+def function spam(n:int) : void do {
+  for(let i = 0, i < n, i = i+1) do {
+    print("Hello world")
+  }
+}
+
+spam(100)
+````
 
 # Functions
 

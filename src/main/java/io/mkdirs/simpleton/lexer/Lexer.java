@@ -96,6 +96,7 @@ public class Lexer extends ResultProvider {
                         case THEN_KW -> tokens.add(new ThenKW());
                         case VOID_KW -> tokens.add(new VoidKW());
                         case WHILE_KW -> tokens.add(new WhileKW());
+                        case FOR_KW -> tokens.add(new ForKW());
                     }
 
                     charIndex += (kind.literal.length());
