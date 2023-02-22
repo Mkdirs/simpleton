@@ -5,5 +5,5 @@ import io.mkdirs.simpleton.model.token.TokenKind;
 
 public class Equality extends Token {
 
-    public Equality(){super(TokenKind.EQUALITY);}
+    public Equality(int line, int column){super(TokenKind.EQUALITY, line, column);}
 }

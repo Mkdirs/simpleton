@@ -5,6 +5,6 @@ import io.mkdirs.simpleton.model.token.TokenKind;
 
 public class Or extends Token {
 
-    public Or(){super(TokenKind.OR);}
+    public Or(int line, int column){super(TokenKind.OR, line, column);}
 
 }

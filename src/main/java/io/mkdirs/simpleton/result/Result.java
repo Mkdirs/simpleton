@@ -1,34 +1,31 @@
 package io.mkdirs.simpleton.result;
 
-public class Result<T> {
+public class Result<U, V> {
 
-    private final T value;
+    private final U value;
+    private final V err;
+
     private final boolean isFailure;
     private boolean isTerminative = false;
-    private final String message;
 
-    public static <U> Result<U> success(U value){
-        return new Result<U>(value);
+    public static <U, V> Result<U, V> success(U value){
+        return new Result<U, V>(value, null, false);
     }
 
-    public static Result failure(String message){
-        return new Result(message);
+    public static  <U, V> Result<U, V> failure(V err){
+        return new Result<U, V>(null, err, true);
     }
 
-    protected Result(T value){
+
+    private Result(U value, V err, boolean isFailure){
         this.value = value;
-        this.isFailure = false;
-        this.message = null;
-    }
-
-    protected Result(String message){
-        this.value = null;
-        this.isFailure = true;
-        this.message = message;
+        this.err = err;
+        this.isFailure = isFailure;
     }
 
 
-    public T get(){return this.value;}
+    public U get(){return this.value;}
+    public V err(){return this.err;}
 
     public boolean isFailure() {
         return isFailure;
@@ -44,7 +41,4 @@ public class Result<T> {
 
     public void setTerminative(){this.isTerminative = true;}
 
-    public String getMessage() {
-        return message;
-    }
 }

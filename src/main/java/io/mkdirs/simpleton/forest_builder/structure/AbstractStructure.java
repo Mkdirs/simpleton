@@ -4,6 +4,7 @@ import io.mkdirs.simpleton.application.Simpleton;
 import io.mkdirs.simpleton.evaluator.ASTNode;
 import io.mkdirs.simpleton.forest_builder.TreeBuilder;
 import io.mkdirs.simpleton.forest_builder.TreeBuilderResult;
+import io.mkdirs.simpleton.model.error.StackableErrorBuilder;
 import io.mkdirs.simpleton.model.token.Token;
 import io.mkdirs.simpleton.model.token.TokenKind;
 import io.mkdirs.simpleton.result.Result;
@@ -53,7 +54,11 @@ public abstract class AbstractStructure extends TreeBuilder {
         }
 
         if(end == null)
-            return new TreeBuilderResult(Result.failure("Unclosed bracket !"), 0);
+            return new TreeBuilderResult(Result.failure(
+                    new StackableErrorBuilder("Unclosed bracket !")
+                            .withStatement("")
+                            .build()
+            ), 0);
 
 
 

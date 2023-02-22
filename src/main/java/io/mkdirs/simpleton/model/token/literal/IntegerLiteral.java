@@ -4,7 +4,7 @@ import io.mkdirs.simpleton.model.token.TokenKind;
 
 public class IntegerLiteral extends LiteralValueToken {
 
-    public IntegerLiteral(String value) {
-        super(TokenKind.INT_LITERAL, value);
+    public IntegerLiteral(String value, int line, int column) {
+        super(TokenKind.INT_LITERAL, value, line, column);
     }
 }

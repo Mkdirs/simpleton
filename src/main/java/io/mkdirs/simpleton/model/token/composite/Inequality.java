@@ -5,5 +5,5 @@ import io.mkdirs.simpleton.model.token.TokenKind;
 
 public class Inequality extends Token {
 
-    public Inequality(){super(TokenKind.INEQUALITY);}
+    public Inequality(int line, int column){super(TokenKind.INEQUALITY, line, column);}
 }

@@ -1,7 +1,7 @@
 package io.mkdirs.simpleton.evaluator.operator;
 
-import io.mkdirs.simpleton.model.token.Token;
-import io.mkdirs.simpleton.model.token.TokenKind;
+import io.mkdirs.simpleton.model.Type;
+import io.mkdirs.simpleton.model.Value;
 
 public class Operand {
 
@@ -10,14 +10,14 @@ public class Operand {
 
     public static final Operand NOTHING = new Operand();
 
-    public static final Operand with(TokenKind tokenKind){
-        return new Operand(tokenKind, SOME_CODE);
+    public static final Operand with(Type type){
+        return new Operand(type, SOME_CODE);
     }
 
-    private final TokenKind tokenKind;
+    private final Type type;
     private final int code;
-    private Operand(TokenKind tokenKind, int code){
-        this.tokenKind = tokenKind;
+    private Operand(Type type, int code){
+        this.type = type;
         this.code = code;
     }
 
@@ -25,15 +25,17 @@ public class Operand {
         this(null, NOTHING_CODE);
     }
 
-    public boolean match(TokenKind t){
+    public boolean match(Value val){
         if(this.equals(NOTHING))
-            return (t == null);
+            return (val == null);
+        else if(val == null)
+            return false;
 
-        return tokenKind.equals(t);
+        return type.equals(val.type());
     }
 
-    public TokenKind getTokenKind() {
-        return tokenKind;
+    public Type getType() {
+        return type;
     }
 
     @Override

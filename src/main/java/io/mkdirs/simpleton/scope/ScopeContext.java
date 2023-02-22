@@ -3,13 +3,13 @@ package io.mkdirs.simpleton.scope;
 import io.mkdirs.simpleton.func_executor.IFuncExecutor;
 import io.mkdirs.simpleton.func_executor.NativeFuncExecutor;
 import io.mkdirs.simpleton.model.Type;
-import io.mkdirs.simpleton.model.token.Token;
+import io.mkdirs.simpleton.model.Value;
+import io.mkdirs.simpleton.model.error.StackableError;
+import io.mkdirs.simpleton.model.error.StackableErrorBuilder;
 import io.mkdirs.simpleton.model.token.composite.Func;
-import io.mkdirs.simpleton.model.token.literal.LiteralValueToken;
 import io.mkdirs.simpleton.result.Result;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class ScopeContext {
 
@@ -63,7 +63,7 @@ public class ScopeContext {
                 .anyMatch(e -> e.partialEquals(signature));
     }
 
-    public Result<FuncSignature> getFunctionSign(Func func) throws IllegalStateException{
+    public Result<FuncSignature, StackableError> getFunctionSign(Func func) throws IllegalStateException{
         if(!func.areArgsComputed())
             throw new IllegalStateException("Function "+func+" has not computed its arguments !");
 
@@ -76,16 +76,23 @@ public class ScopeContext {
             return Result.success(candidates.get(0));
 
         if(candidates.size() > 1)
-            return Result.failure("Cannot determine signature of "+func.toText());
+            return Result.failure(new StackableErrorBuilder("Cannot determine signature of "+func.toText())
+                    .withStatement("")
+                    .build()
+            );
 
 
         if(this.parent != null)
             return this.parent.getFunctionSign(func);
 
-        return Result.failure("Function '"+(func.toText())+"' does not exist");
+
+        return Result.failure(new StackableErrorBuilder("Function '"+(func.toText())+"' does not exist")
+                .withStatement("")
+                .build()
+        );
     }
 
-    public void pushVariable(String name, Type type, LiteralValueToken value){
+    public void pushVariable(String name, Type type, Value value){
         this.variables.put(name, new VariableHolder(type, value));
     }
 

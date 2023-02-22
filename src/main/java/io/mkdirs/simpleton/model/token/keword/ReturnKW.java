@@ -5,6 +5,6 @@ import io.mkdirs.simpleton.model.token.TokenKind;
 
 public class ReturnKW extends Token {
 
-    public ReturnKW(){super(TokenKind.RETURN_KW);}
+    public ReturnKW(int line, int column){super(TokenKind.RETURN_KW, line, column);}
 
 }

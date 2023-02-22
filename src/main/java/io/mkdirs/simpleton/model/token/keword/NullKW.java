@@ -5,5 +5,5 @@ import io.mkdirs.simpleton.model.token.TokenKind;
 
 public class NullKW extends Token {
 
-    public NullKW(){super(TokenKind.NULL_KW);}
+    public NullKW(int line, int column){super(TokenKind.NULL_KW, line, column);}
 }

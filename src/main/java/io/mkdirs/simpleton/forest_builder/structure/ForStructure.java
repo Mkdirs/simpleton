@@ -12,6 +12,7 @@ import io.mkdirs.simpleton.result.Result;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ForStructure extends AbstractStructure {
 
@@ -76,13 +77,13 @@ public class ForStructure extends AbstractStructure {
         );
 
         var initialization = getPart(0, strippedLine);
-        initialization.add(new EOL());
+        initialization.add(new EOL(-1, -1));
 
         var condition = getPart(1, strippedLine);
-        condition.add(new EOL());
+        condition.add(new EOL(-1, -1));
 
         var loopStatement = getPart(2, strippedLine);
-        loopStatement.add(new EOL());
+        loopStatement.add(new EOL(-1, -1));
 
         var initRes = head.build(initialization);
         if(initRes.tree().isFailure())

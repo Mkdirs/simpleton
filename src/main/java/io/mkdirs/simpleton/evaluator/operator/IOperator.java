@@ -1,8 +1,8 @@
 package io.mkdirs.simpleton.evaluator.operator;
 
-import io.mkdirs.simpleton.model.token.literal.LiteralValueToken;
+import io.mkdirs.simpleton.model.Value;
 
 public interface IOperator {
 
-    LiteralValueToken evaluate(LiteralValueToken left, LiteralValueToken right);
+    Value evaluate(Value left, Value right);
 }

@@ -5,5 +5,5 @@ import io.mkdirs.simpleton.model.token.TokenKind;
 
 public class BoolKW extends Token {
 
-    public BoolKW(){super(TokenKind.BOOL_KW);}
+    public BoolKW(int line, int column){super(TokenKind.BOOL_KW, line, column);}
 }

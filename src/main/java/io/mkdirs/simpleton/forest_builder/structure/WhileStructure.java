@@ -46,7 +46,7 @@ public class WhileStructure extends AbstractStructure {
 
         var firstLine = tokens.subList(0, indexOfEOL);
 
-        Result<ASTNode> exprRes = evaluator.buildTree(firstLine.subList(2, firstLine.lastIndexOf(
+        var exprRes = evaluator.buildTree(firstLine.subList(2, firstLine.lastIndexOf(
                 firstLine.stream()
                         .filter(e -> TokenKind.R_PAREN.equals(e.kind))
                         .findFirst().orElse(null)

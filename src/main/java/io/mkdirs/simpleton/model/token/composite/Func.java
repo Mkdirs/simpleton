@@ -3,6 +3,9 @@ package io.mkdirs.simpleton.model.token.composite;
 import io.mkdirs.simpleton.evaluator.ASTNode;
 import io.mkdirs.simpleton.evaluator.ExpressionEvaluator;
 import io.mkdirs.simpleton.model.Type;
+import io.mkdirs.simpleton.model.Value;
+import io.mkdirs.simpleton.model.error.StackableError;
+import io.mkdirs.simpleton.model.error.StackableErrorBuilder;
 import io.mkdirs.simpleton.model.token.Token;
 import io.mkdirs.simpleton.model.token.TokenKind;
 import io.mkdirs.simpleton.model.token.literal.LiteralValueToken;
@@ -15,15 +18,15 @@ public class Func extends Token {
 
     private List<Token> body = new ArrayList<>();
     private final List<Token> rawArgs = new ArrayList<>();
-    private final List<LiteralValueToken> args = new ArrayList<>();
+    private final List<Value> args = new ArrayList<>();
 
     private boolean computedArgs = false;
     //private int fullBodyLength = 0;
 
     public final String name;
 
-    public Func(String name){
-        super(TokenKind.FUNC);
+    public Func(String name, int line, int column){
+        super(TokenKind.FUNC, line, column);
         this.name = name;
     }
 
@@ -33,33 +36,33 @@ public class Func extends Token {
     }
 
     public List<Token> getRawArgs(){return rawArgs;}
-    public List<LiteralValueToken> getArgs(){return args;}
+    public List<Value> getArgs(){return args;}
 
     public boolean areArgsComputed() {
         return computedArgs;
     }
 
-    private Result<LiteralValueToken> computeArg(List<Token> tokens, ExpressionEvaluator evaluator){
-        Result<ASTNode> res =  evaluator.buildTree(tokens);
+    private Result<Value, StackableError> computeArg(List<Token> tokens, ExpressionEvaluator evaluator){
+        var res =  evaluator.buildTree(tokens);
 
         if(res.isFailure())
-            return Result.failure(res.getMessage());
+            return Result.failure(new StackableErrorBuilder(res.err().highlightError()).build());
 
-        Result<LiteralValueToken> resToken = evaluator.evaluate(res.get());
+        var resToken = evaluator.evaluate(res.get());
 
         if(resToken.isFailure())
             return resToken;
 
-        Token tok = resToken.get();
+        Value val = resToken.get();
 
-        if(TokenKind.FUNC.equals(tok.kind)) {
-            Result r = ((Func) tok).computeArgs(evaluator);
+        if(TokenKind.FUNC.equals(res.get().getToken().kind)) {
+            var r = ((Func) res.get().getToken()).computeArgs(evaluator);
 
             if(r.isFailure())
                 return r;
         }
 
-        return Result.success((LiteralValueToken) tok);
+        return Result.success(val);
 
     }
 
@@ -70,7 +73,7 @@ public class Func extends Token {
         for(Token t : body.subList(1, body.size()-1)){
             if(TokenKind.COMMA.equals(t.kind)){
 
-                Result<LiteralValueToken> res = computeArg(temp, evaluator);
+                var res = computeArg(temp, evaluator);
                 if(res.isFailure())
                     return res;
 
@@ -84,7 +87,7 @@ public class Func extends Token {
         }
 
         if(!temp.isEmpty()){
-            Result<LiteralValueToken> res = computeArg(temp, evaluator);
+            var res = computeArg(temp, evaluator);
             if(res.isFailure())
                 return res;
 
@@ -126,7 +129,7 @@ public class Func extends Token {
 
     @Override
     public String toText() {
-        String argsStr = String.join(",", args.stream().map(e -> Type.typeOf(e.kind)).map(Type::name).toList());
+        String argsStr = String.join(",", args.stream().map(Value::type).map(Type::name).toList());
         return name+"("+argsStr+")";
     }
 }

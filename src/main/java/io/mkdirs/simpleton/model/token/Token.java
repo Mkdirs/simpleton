@@ -5,10 +5,13 @@ public abstract class Token {
 
 
     public final TokenKind kind;
+    public final int line,column;
 
 
-    protected Token(TokenKind kind){
+    protected Token(TokenKind kind, int line, int column){
         this.kind = kind;
+        this.line = line;
+        this.column = column;
     }
 
 
@@ -36,6 +39,12 @@ public abstract class Token {
 
     public String toText(){
         return this.toString();
+    }
+
+    public String toRaw(){
+        if(kind.hasLiteral())
+            return kind.literal;
+        return "";
     }
 
     @Override

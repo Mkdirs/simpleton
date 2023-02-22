@@ -5,5 +5,5 @@ import io.mkdirs.simpleton.model.token.TokenKind;
 
 public class FloatKW extends Token {
 
-    public FloatKW(){super(TokenKind.FLOAT_KW);}
+    public FloatKW(int line, int column){super(TokenKind.FLOAT_KW, line, column);}
 }

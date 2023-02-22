@@ -34,7 +34,7 @@ public class FullVariableInitialization extends TreeBuilder{
         if(! isValid(tokens))
             return super.build(tokens);
 
-        ASTNode root = new ASTNode(new Equals());
+        ASTNode root = new ASTNode(tokens.get(4));
 
         ASTNode left = new ASTNode(tokens.get(0));
         left.addChildren(
@@ -47,7 +47,7 @@ public class FullVariableInitialization extends TreeBuilder{
                         .filter(e -> TokenKind.EOL.equals(e.kind))
                         .findFirst().orElse(null)
         );
-        Result<ASTNode> exprRes = evaluator.buildTree(tokens.subList(5, indexOfEOL));
+        var exprRes = evaluator.buildTree(tokens.subList(5, indexOfEOL));
 
 
         if(exprRes.isFailure())

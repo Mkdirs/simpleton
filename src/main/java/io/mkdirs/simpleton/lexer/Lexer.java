@@ -1,40 +1,55 @@
 package io.mkdirs.simpleton.lexer;
 
+import io.mkdirs.simpleton.model.error.ErrorStack;
+import io.mkdirs.simpleton.model.error.StackableError;
+import io.mkdirs.simpleton.model.error.StackableErrorBuilder;
 import io.mkdirs.simpleton.model.token.*;
 import io.mkdirs.simpleton.model.token.composite.*;
 import io.mkdirs.simpleton.model.token.keword.*;
 import io.mkdirs.simpleton.model.token.literal.*;
 import io.mkdirs.simpleton.result.Result;
-import io.mkdirs.simpleton.result.ResultProvider;
-import io.mkdirs.simpleton.scope.ScopeContext;
 
 import java.util.*;
 
-public class Lexer extends ResultProvider {
+public class Lexer{
 
     private int charIndex = 0;
+    private int line = 0;
+    private final String text;
+
+    public Lexer(String text){
+        this.text = text;
+    }
 
 
 
-    public Result<List<Token>> parse(String statement) {
-        setStatement(statement);
+    public Result<List<Token>, StackableError> parse() {
 
         List<Token> tokens = new ArrayList<>();
         this.charIndex = 0;
+        line = 0;
 
-        char[] chars = statement.toCharArray();
+        char[] chars = text.toCharArray();
 
 
         while(this.charIndex < chars.length){
 
-            Result<LexerSubParsingResult> result = null;
+            Result<LexerSubParsingResult, StackableError> result = null;
 
             Character car = chars[charIndex];
+
+            if(car.equals(TokenKind.EOL.literal.charAt(0))){
+                tokens.add(new EOL(line, charIndex));
+                line++;
+                charIndex++;
+                continue;
+            }
 
             if(Character.isWhitespace(car)){
                 this.charIndex++;
                 continue;
             }
+
 
 
             var charMatch = Arrays.stream(TokenKind.values())
@@ -47,24 +62,23 @@ public class Lexer extends ResultProvider {
             if(charMatch.isPresent()) {
                 TokenKind kind = charMatch.get();
                 switch (kind){
-                    case AMPERSAND -> tokens.add(new Ampersand());
-                    case EQUALS -> tokens.add(new Equals());
-                    case GREATER_THAN -> tokens.add(new GreaterThan());
-                    case LOWER_THAN -> tokens.add(new LowerThan());
-                    case NOT -> tokens.add(new Not());
-                    case PIPE -> tokens.add(new Pipe());
-                    case COLON -> tokens.add(new Colon());
-                    case COMMA -> tokens.add(new Comma());
-                    case DIVIDE -> tokens.add(new Divide());
-                    case EOL -> tokens.add(new EOL());
-                    case L_BRACKET -> tokens.add(new LBracket());
-                    case R_BRACKET -> tokens.add(new RBracket());
-                    case L_PAREN -> tokens.add(new LParen());
-                    case R_PAREN -> tokens.add(new RParen());
-                    case MINUS -> tokens.add(new Minus());
-                    case PLUS -> tokens.add(new Plus());
-                    case STAR -> tokens.add(new Star());
-                    case PERCENT -> tokens.add(new Percent());
+                    case AMPERSAND -> tokens.add(new Ampersand(line, charIndex));
+                    case EQUALS -> tokens.add(new Equals(line, charIndex));
+                    case GREATER_THAN -> tokens.add(new GreaterThan(line, charIndex));
+                    case LOWER_THAN -> tokens.add(new LowerThan(line, charIndex));
+                    case NOT -> tokens.add(new Not(line, charIndex));
+                    case PIPE -> tokens.add(new Pipe(line, charIndex));
+                    case COLON -> tokens.add(new Colon(line, charIndex));
+                    case COMMA -> tokens.add(new Comma(line, charIndex));
+                    case DIVIDE -> tokens.add(new Divide(line, charIndex));
+                    case L_BRACKET -> tokens.add(new LBracket(line, charIndex));
+                    case R_BRACKET -> tokens.add(new RBracket(line, charIndex));
+                    case L_PAREN -> tokens.add(new LParen(line, charIndex));
+                    case R_PAREN -> tokens.add(new RParen(line, charIndex));
+                    case MINUS -> tokens.add(new Minus(line, charIndex));
+                    case PLUS -> tokens.add(new Plus(line, charIndex));
+                    case STAR -> tokens.add(new Star(line, charIndex));
+                    case PERCENT -> tokens.add(new Percent(line, charIndex));
                 }
 
                 charIndex += (kind.literal.length());
@@ -79,24 +93,24 @@ public class Lexer extends ResultProvider {
                 if(textualMatch.isPresent()){
                     TokenKind kind = textualMatch.get();
                     switch (kind){
-                        case BOOL_KW -> tokens.add(new BoolKW());
-                        case CHAR_KW -> tokens.add(new CharKW());
-                        case STRING_KW -> tokens.add(new StringKW());
-                        case INT_KW -> tokens.add(new IntKW());
-                        case FLOAT_KW -> tokens.add(new FloatKW());
-                        case ANY_KW -> tokens.add(new AnyKW());
-                        case DEF_KW -> tokens.add(new DefKW());
-                        case DO_KW -> tokens.add(new DoKW());
-                        case ELSE_KW -> tokens.add(new ElseKW());
-                        case FUNCTION_KW -> tokens.add(new FunctionKW());
-                        case IF_KW -> tokens.add(new IfKW());
-                        case LET_KW -> tokens.add(new LetKW());
-                        case NULL_KW -> tokens.add(new NullKW());
-                        case RETURN_KW -> tokens.add(new ReturnKW());
-                        case THEN_KW -> tokens.add(new ThenKW());
-                        case VOID_KW -> tokens.add(new VoidKW());
-                        case WHILE_KW -> tokens.add(new WhileKW());
-                        case FOR_KW -> tokens.add(new ForKW());
+                        case BOOL_KW -> tokens.add(new BoolKW(line, charIndex));
+                        case CHAR_KW -> tokens.add(new CharKW(line, charIndex));
+                        case STRING_KW -> tokens.add(new StringKW(line, charIndex));
+                        case INT_KW -> tokens.add(new IntKW(line, charIndex));
+                        case FLOAT_KW -> tokens.add(new FloatKW(line, charIndex));
+                        case ANY_KW -> tokens.add(new AnyKW(line, charIndex));
+                        case DEF_KW -> tokens.add(new DefKW(line, charIndex));
+                        case DO_KW -> tokens.add(new DoKW(line, charIndex));
+                        case ELSE_KW -> tokens.add(new ElseKW(line, charIndex));
+                        case FUNCTION_KW -> tokens.add(new FunctionKW(line, charIndex));
+                        case IF_KW -> tokens.add(new IfKW(line, charIndex));
+                        case LET_KW -> tokens.add(new LetKW(line, charIndex));
+                        case NULL_KW -> tokens.add(new NullKW(line, charIndex));
+                        case RETURN_KW -> tokens.add(new ReturnKW(line, charIndex));
+                        case THEN_KW -> tokens.add(new ThenKW(line, charIndex));
+                        case VOID_KW -> tokens.add(new VoidKW(line, charIndex));
+                        case WHILE_KW -> tokens.add(new WhileKW(line, charIndex));
+                        case FOR_KW -> tokens.add(new ForKW(line, charIndex));
                     }
 
                     charIndex += (kind.literal.length());
@@ -118,123 +132,13 @@ public class Lexer extends ResultProvider {
 
 
 
-                /*switch(car){
-                    case '+':
-                        tokens.add(Token.PLUS);
-                        break;
-
-                    case '-':
-                        tokens.add(new Token(Token.MINUS));
-                        break;
-
-                    case '*':
-                        tokens.add(new Token(Token.TIMES));
-                        break;
-
-                    case '/':
-                        tokens.add(new Token(Token.DIVIDE));
-                        break;
-
-                    case '>':
-                        tokens.add(new Token(Token.GREATER_THAN));
-                        break;
-
-                    case '<':
-                        tokens.add(new Token(Token.SMALLER_THAN));
-                        break;
-
-                    case '(':
-                        tokens.add(new Token(Token.LEFT_PARENTHESIS));
-                        break;
-
-                    case ')':
-                        tokens.add(new Token(Token.RIGHT_PARENTHESIS));
-                        break;
-
-                    case '!':
-                        if(isText("!=")){
-                            tokens.add(new Token(Token.INEQUALITY));
-                            this.charIndex++;
-                        }else
-                            pushError("Unexpected character '!'", this.charIndex+1, 1);
-
-                        break;
-
-                    case '=':
-                        if(isText("==")) {
-                            tokens.add(new Token(Token.EQUALITY));
-                            this.charIndex++;
-                        }else
-                            tokens.add(new Token(Token.ASSIGN));
-
-                        break;
-
-                    case '&':
-                        if(isText("&&")) {
-                            tokens.add(new Token(Token.AND));
-                            this.charIndex++;
-                        }else{
-                            pushError("Expected character '&'", this.charIndex+1, 1);
-                        }
-
-                        break;
-
-                    case '|':
-                        if(isText("||")){
-                            tokens.add(new Token(Token.OR));
-                            this.charIndex++;
-                        }else{
-                            pushError("Expected character '|'", this.charIndex+1, 1);
-                        }
-
-                        break;
-
-                    case '\'':
-                        result = parseCharacter();
-                        break;
-                    case '\"':
-                        result = parseString();
-                        break;
-                    default:
-
-                        if(Character.isDigit(car)) {
-                            result = parseNumber();
-                        }else if(isText("true")) {
-                            tokens.add(new Token(Token.BOOLEAN_LITERAL, "true"));
-                            this.charIndex+=3;
-                        }else if(isText("false")) {
-                            tokens.add(new Token(Token.BOOLEAN_LITERAL, "false"));
-                            this.charIndex += 4;
-                        }else if(isText("int")) {
-                            tokens.add(new Token(Token.INT_KW));
-                            this.charIndex += 2;
-                        }else if(isText("float")) {
-                            tokens.add(new Token(Token.FLOAT_KW));
-                            this.charIndex += 4;
-                        }else if(isText("string")) {
-                            tokens.add(new Token(Token.STRING_KW));
-                            this.charIndex += 5;
-                        }else if(isText("char")) {
-                            tokens.add(new Token(Token.CHAR_KW));
-                            this.charIndex += 3;
-                        }else if(isText("bool")){
-                            tokens.add(new Token(Token.BOOL_KW));
-                            this.charIndex+=3;
-                        }else{
-                            result = parseVariableName();
-                        }
-                        break;
-                }
-
-                 */
-
             if(result != null){
                 if(result.isSuccess()){
                     tokens.add(result.get().getToken());
                     this.charIndex+=result.get().getCharsToSkip();
                     continue;
                 }else{
-                    return Result.failure(result.getMessage());
+                    return Result.failure(new StackableErrorBuilder(result.err().highlightError()).build());
                 }
             }
 
@@ -246,12 +150,12 @@ public class Lexer extends ResultProvider {
         return buildFuncTokens(collapse(tokens));
     }
 
-    private Result<Func> buildFunc(List<Token> tokens){
+    private Result<Func, StackableError> buildFunc(List<Token> tokens){
         if(!TokenKind.FUNC.equals(tokens.get(0).kind))
             return null;
 
         Func func = (Func) tokens.get(0);
-        func.addInBody(new LParen());
+        func.addInBody(new LParen(func.line, func.column+1));
         int openParen = 1;
         boolean finished = false;
         boolean lonelyComma = false;
@@ -281,7 +185,7 @@ public class Lexer extends ResultProvider {
 
 
             if(TokenKind.FUNC.equals(current.kind)){
-                Result<Func> otherFuncRes = buildFunc(tokens.subList(i, tokens.size()));
+                var otherFuncRes = buildFunc(tokens.subList(i, tokens.size()));
                 if(otherFuncRes.isFailure())
                     return otherFuncRes;
 
@@ -305,25 +209,32 @@ public class Lexer extends ResultProvider {
         //lonelyComma = func.getBody().isEmpty() ? lonelyComma || false : lonelyComma;
 
         if(lonelyComma)
-            return pushError("Error lonely comma detected");
+            return Result.failure(new StackableErrorBuilder("Error lonely comma detected")
+                    .build()
+            );
 
         if(openParen > 0)
-            return pushError("Error unclosed parenthesis");
+            return Result.failure(new StackableErrorBuilder("Error unclosed parenthesis")
+                    .build()
+            );
 
 
         return Result.success(func);
     }
-    private Result<List<Token>> buildFuncTokens(List<Token> tokens){
+    private Result<List<Token>, StackableError> buildFuncTokens(List<Token> tokens){
         List<Token> result = new ArrayList<>();
         int i = 0;
         while(i < tokens.size()) {
             Token current = tokens.get(i);
 
             if (TokenKind.FUNC.equals(current.kind)) {
-                Result<Func> funcRes = buildFunc(tokens.subList(i, tokens.size()));
+                var funcRes = buildFunc(tokens.subList(i, tokens.size()));
 
                 if(funcRes.isFailure())
-                    return Result.failure(funcRes.getMessage());
+                    return Result.failure(new StackableErrorBuilder(funcRes.err().message())
+                            .withStatement("")
+                            .build()
+                    );
 
                 result.add(funcRes.get());
                 i += funcRes.get().getFullBodyLength();
@@ -370,15 +281,31 @@ public class Lexer extends ResultProvider {
         return collapsed;
     }
 
+    private String currentStatement(){
+        StringBuilder s = new StringBuilder(text.substring(charIndex));
+        int i = charIndex;
+        char car = text.charAt(i);
+
+        while(i > 0 && car != '\n'){
+            i--;
+            car = text.charAt(i);
+            if(car != '\n')
+                s.insert(0, car);
+        }
+
+        int eol = s.indexOf("\n");
+        return s.substring(0, eol);
+    }
+
 
     private boolean isText(String s){
-        if(this.charIndex+s.length() > this.statement.length())
+        if(this.charIndex+s.length() > text.length())
             return false;
 
         String extracted = "";
         int offst = this.charIndex;
-        while(offst < this.statement.length()){
-            Character c = this.statement.charAt(offst);
+        while(offst < text.length()){
+            Character c = text.charAt(offst);
 
             boolean metToken = Arrays.stream(TokenKind.values())
                     .filter(TokenKind::hasLiteral)
@@ -401,10 +328,10 @@ public class Lexer extends ResultProvider {
 
 
     private Character seekTo(int charIndex){
-        if(charIndex < 0 || charIndex >= this.statement.length())
+        if(charIndex < 0 || charIndex >= text.length())
             return Character.UNASSIGNED;
 
-        return this.statement.charAt(charIndex);
+        return text.charAt(charIndex);
     }
 
 
@@ -428,20 +355,25 @@ public class Lexer extends ResultProvider {
 
      */
 
-    private Result<LexerSubParsingResult> parseBoolean(){
+    private Result<LexerSubParsingResult, StackableError> parseBoolean(){
         final String boolean_true = "true";
         final String boolean_false = "false";
 
         if(isText(boolean_true))
-            return Result.success(new LexerSubParsingResult(new BooleanLiteral(boolean_true), boolean_true.length()));
+            return Result.success(new LexerSubParsingResult(new BooleanLiteral(boolean_true, line, charIndex), boolean_true.length()));
 
         else if(isText(boolean_false))
-            return Result.success(new LexerSubParsingResult(new BooleanLiteral(boolean_false), boolean_false.length()));
+            return Result.success(new LexerSubParsingResult(new BooleanLiteral(boolean_false, line, charIndex), boolean_false.length()));
 
-        return pushError("Unexpected error at parseBoolean", this.charIndex);
+
+        return Result.failure(new StackableErrorBuilder("Unexpected error at parseBoolean")
+                .withStatement(currentStatement())
+                .withCursor(0)
+                .build()
+        );
     }
 
-    private Result<LexerSubParsingResult> parseVariableName(){
+    private Result<LexerSubParsingResult, StackableError> parseVariableName(){
 
         String name = "";
         int offset = 0;
@@ -452,16 +384,24 @@ public class Lexer extends ResultProvider {
         }
 
         if(name.isEmpty())
-            return pushError("Unexpected error at parseVariableName", this.charIndex);
+            return Result.failure(new StackableErrorBuilder("Unexpected error at parseVariableName")
+                    .withStatement(currentStatement())
+                    .withCursor(0)
+                    .build()
+            );
 
-        LexerSubParsingResult result = new LexerSubParsingResult(new VariableName(name), offset);
+        LexerSubParsingResult result = new LexerSubParsingResult(new VariableName(name, line, charIndex), offset);
         return Result.success(result);
     }
 
-    private Result<LexerSubParsingResult> parseCharacter(){
+    private Result<LexerSubParsingResult, StackableError> parseCharacter(){
         //Begin
         if(!seekTo(this.charIndex).equals('\'')) {
-            return pushError("Unexpected error at parseCharacter", this.charIndex, 1);
+            return Result.failure(new StackableErrorBuilder("Unexpected error at parseCharacter")
+                    .withStatement(currentStatement())
+                    .withCursor(0)
+                    .build()
+            );
         }
 
         int offset = 1;
@@ -477,29 +417,45 @@ public class Lexer extends ResultProvider {
             closed = true;
 
         if(!closed){
-            return pushError("Unclosed character literal", this.charIndex+offset, 1);
+            return Result.failure(new StackableErrorBuilder("Unclosed character literal")
+                    .withStatement(currentStatement())
+                    .withCursor(0)
+                    .build()
+            );
         }
 
         if(value.length() == 0){
-            return pushError("Empty character literal", this.charIndex, 2);
+            return Result.failure(new StackableErrorBuilder("Empty character literal")
+                    .withStatement(currentStatement())
+                    .withCursor(0)
+                    .build()
+            );
         }
 
         if(value.length() == 2 && value.startsWith("\\")){
             value = "\\"+value.charAt(1);
 
         }else if(value.length() > 1){
-            return pushError("Too many characters in character literal", this.charIndex, offset+1);
+            return Result.failure(new StackableErrorBuilder("Too many characters in character literal")
+                    .withStatement(currentStatement())
+                    .withCursor(0)
+                    .build()
+            );
         }
 
 
-        LexerSubParsingResult result = new LexerSubParsingResult(new CharacterLiteral(value), offset+1);
+        LexerSubParsingResult result = new LexerSubParsingResult(new CharacterLiteral(value, line, charIndex), offset+1);
         return Result.success(result);
     }
 
-    private Result<LexerSubParsingResult> parseString(){
+    private Result<LexerSubParsingResult, StackableError> parseString(){
         //Begin
         if(!seekTo(this.charIndex).equals('\"')) {
-            return pushError("Unexpected error at parseString", this.charIndex, 1);
+            return Result.failure(new StackableErrorBuilder("Unexpected error at parseString")
+                    .withStatement(currentStatement())
+                    .withCursor(0)
+                    .build()
+            );
         }
 
         boolean closed = false;
@@ -516,16 +472,24 @@ public class Lexer extends ResultProvider {
             closed = true;
 
         if(!closed){
-            return pushError("Unclosed string literal", this.charIndex+offset, 1);
+            return Result.failure(new StackableErrorBuilder("Unclosed string literal")
+                    .withStatement(currentStatement())
+                    .withCursor(0)
+                    .build()
+            );
         }
 
-        LexerSubParsingResult result = new LexerSubParsingResult(new StringLiteral(string), offset+1);
+        LexerSubParsingResult result = new LexerSubParsingResult(new StringLiteral(string, line, charIndex), offset+1);
         return Result.success(result);
     }
 
-    private Result<LexerSubParsingResult> parseNumber(){
+    private Result<LexerSubParsingResult, StackableError> parseNumber(){
         if(!Character.isDigit(seekTo(this.charIndex))){
-            return pushError("Unexpected error at parseNumber", this.charIndex, 1);
+            return Result.failure(new StackableErrorBuilder("Unexpected error at parseNumber")
+                    .withStatement(currentStatement())
+                    .withCursor(0)
+                    .build()
+            );
         }
 
         String rawValue = "";
@@ -546,9 +510,9 @@ public class Lexer extends ResultProvider {
 
         Token type = null;
         if(isInteger)
-            type = new IntegerLiteral(rawValue);
+            type = new IntegerLiteral(rawValue, line, charIndex);
         else
-            type = new FloatLiteral(rawValue);
+            type = new FloatLiteral(rawValue, line, charIndex);
 
         LexerSubParsingResult result = new LexerSubParsingResult(type, offset);
 

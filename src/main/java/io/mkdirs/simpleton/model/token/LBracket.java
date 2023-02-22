@@ -2,7 +2,7 @@ package io.mkdirs.simpleton.model.token;
 
 public class LBracket extends Token {
 
-    public LBracket() {
-        super(TokenKind.L_BRACKET);
+    public LBracket(int line, int column) {
+        super(TokenKind.L_BRACKET, line, column);
     }
 }

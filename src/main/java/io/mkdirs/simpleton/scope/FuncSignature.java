@@ -1,6 +1,7 @@
 package io.mkdirs.simpleton.scope;
 
 import io.mkdirs.simpleton.model.Type;
+import io.mkdirs.simpleton.model.Value;
 import io.mkdirs.simpleton.model.token.Token;
 import io.mkdirs.simpleton.model.token.composite.Func;
 
@@ -55,7 +56,7 @@ public class FuncSignature {
             return false;
 
         Type[] signatureTypes = args.values().toArray(Type[]::new);
-        Type[] candidateTypes = other.getArgs().stream().map(e -> Type.typeOf(e.kind)).toArray(Type[]::new);
+        Type[] candidateTypes = other.getArgs().stream().map(Value::type).toArray(Type[]::new);
         boolean valid = true;
         int i = 0;
         while(valid && i < signatureTypes.length){

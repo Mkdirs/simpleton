@@ -3,14 +3,15 @@ package io.mkdirs.simpleton.evaluator;
 import io.mkdirs.simpleton.application.Simpleton;
 import io.mkdirs.simpleton.evaluator.operator.Operator;
 import io.mkdirs.simpleton.model.Type;
+import io.mkdirs.simpleton.model.Value;
+import io.mkdirs.simpleton.model.error.StackableError;
+import io.mkdirs.simpleton.model.error.StackableErrorBuilder;
 import io.mkdirs.simpleton.model.token.Token;
 import io.mkdirs.simpleton.model.token.TokenKind;
 import io.mkdirs.simpleton.model.token.composite.Func;
 import io.mkdirs.simpleton.model.token.composite.VariableName;
 import io.mkdirs.simpleton.model.token.literal.LiteralValueToken;
-import io.mkdirs.simpleton.model.token.literal.NullPlaceholder;
 import io.mkdirs.simpleton.result.Result;
-import io.mkdirs.simpleton.result.ResultProvider;
 import io.mkdirs.simpleton.scope.FuncSignature;
 import io.mkdirs.simpleton.scope.Location;
 import io.mkdirs.simpleton.scope.ScopeContext;
@@ -18,7 +19,7 @@ import io.mkdirs.simpleton.scope.VariableHolder;
 
 import java.util.*;
 
-public class ExpressionEvaluator extends ResultProvider {
+public class ExpressionEvaluator{
 
     ScopeContext scopeContext;
 
@@ -29,7 +30,7 @@ public class ExpressionEvaluator extends ResultProvider {
     public void setScopeContext(ScopeContext scopeContext){this.scopeContext = scopeContext;}
 
 
-    public Result<LiteralValueToken> evaluate(ASTNode tree, Type expectedReturn){
+    public Result<Value, StackableError> evaluate(ASTNode tree, Type expectedReturn){
         if(tree == null)
             return Result.success(null);
 
@@ -40,10 +41,16 @@ public class ExpressionEvaluator extends ResultProvider {
                 VariableHolder var = this.scopeContext.getVariable(varName.name).orElse(null);
 
                 if(var == null)
-                    return Result.failure("Variable '"+varName.name+"' does not exist");
+                    return Result.failure(new StackableErrorBuilder("Variable '"+varName.name+"' does not exist")
+                            .withStatement("")
+                            .build()
+                    );
 
                 if(expectedReturn != null && !Type.ANY.equals(expectedReturn) && !expectedReturn.equals(var.getType()))
-                    return Result.failure("Expected type "+expectedReturn+" but instead got "+var.getType());
+                    return Result.failure(new StackableErrorBuilder("Expected type "+expectedReturn+" but instead got "+var.getType())
+                            .withStatement("")
+                            .build()
+                    );
 
                 return Result.success(var.getValue());
 
@@ -55,17 +62,20 @@ public class ExpressionEvaluator extends ResultProvider {
                     return funcRes;
 
 
-                Result<FuncSignature> signatureResult = this.scopeContext.getFunctionSign(func);
+                Result<FuncSignature, StackableError> signatureResult = this.scopeContext.getFunctionSign(func);
 
                 if(signatureResult.isFailure())
-                    return Result.failure(signatureResult.getMessage());
+                    return Result.failure(new StackableErrorBuilder(signatureResult.err().highlightError()).build());
 
                 FuncSignature signature = signatureResult.get();
 
                 if(expectedReturn != null && !Type.VOID.equals(expectedReturn) && Type.VOID.equals(signature.getReturnType()))
-                    return Result.failure("Expected a return value but "+signature+" has return type "+Type.VOID);
+                    return Result.failure(new StackableErrorBuilder("Expected a return value but "+signature+" has return type "+Type.VOID)
+                            .withStatement("")
+                            .build()
+                    );
 
-                Result<LiteralValueToken> res;
+                Result<Value, StackableError> res;
 
                 if(Location.BUILTINS == signature.getLocation()){
                     res = this.scopeContext.getNativeFuncExecutor().execute(func);
@@ -87,15 +97,24 @@ public class ExpressionEvaluator extends ResultProvider {
                     return res;
 
 
-                LiteralValueToken tok = res.get();
-                if(Type.VOID.equals(signature.getReturnType()) && !Type.VOID.equals(Type.typeOf(tok.kind)))
-                    return Result.failure(token.toText()+" has a return type of "+Type.VOID+". You cannot return a value here");
+                Value val = res.get();
+                if(Type.VOID.equals(signature.getReturnType()) && !Type.VOID.equals(val.type()))
+                    return Result.failure(new StackableErrorBuilder(token.toText()+" has a return type of "+Type.VOID+". You cannot return a value here")
+                            .withStatement("")
+                            .build()
+                    );
 
-                if(!signature.getReturnType().equals(Type.typeOf(tok.kind)) && !Type.NULL.equals(Type.typeOf(tok.kind)) && !Type.ANY.equals(signature.getReturnType()))
-                    return Result.failure("Unexpected error: "+token.toText()+" should return '"+signature.getReturnType().name()+"' but instead returned '"+Type.typeOf(tok.kind)+"'");
+                if(!signature.getReturnType().equals(val.type()) && !Type.NULL.equals(val.type()) && !Type.ANY.equals(signature.getReturnType()))
+                    return Result.failure(new StackableErrorBuilder("Unexpected error: "+token.toText()+" should return '"+signature.getReturnType().name()+"' but instead returned '"+val.type()+"'")
+                            .withStatement("")
+                            .build()
+                    );
 
-                if(expectedReturn != null && !Type.ANY.equals(expectedReturn) && !expectedReturn.equals(Type.typeOf(tok.kind)))
-                    return Result.failure("Expected type "+expectedReturn+" but instead got "+Type.typeOf(tok.kind));
+                if(expectedReturn != null && !Type.ANY.equals(expectedReturn) && !expectedReturn.equals(val.type()))
+                    return Result.failure(new StackableErrorBuilder("Expected type "+expectedReturn+" but instead got "+val.type())
+                            .withStatement("")
+                            .build()
+                    );
 
 
                 return Result.success(res.get());
@@ -103,53 +122,66 @@ public class ExpressionEvaluator extends ResultProvider {
 
             }
             if(TokenKind.NULL_KW.equals(tree.getToken().kind))
-                return Result.success(NullPlaceholder.NULL);
+                return Result.success(Value.NULL);
 
             if(expectedReturn != null && !Type.ANY.equals(expectedReturn) && !expectedReturn.equals(Type.typeOf(tree.getToken().kind)))
-                return Result.failure("Expected type "+expectedReturn+" but instead got "+Type.typeOf(tree.getToken().kind));
+                return Result.failure(new StackableErrorBuilder("Expected type "+expectedReturn+" but instead got "+Type.typeOf(tree.getToken().kind))
+                        .withStatement("")
+                        .build()
+                );
 
 
-            return Result.success((LiteralValueToken) tree.getToken());
+            var type = Type.typeOf(tree.getToken().kind);
+            return Result.success(new Value(type, ((LiteralValueToken)tree.getToken()).value));
         }
 
 
 
-        Result<LiteralValueToken> left = evaluate(tree.left());
+        var left = evaluate(tree.left());
 
         if(left.isFailure())
-            return pushError(left.getMessage());
+            return left;
 
 
-        Result<LiteralValueToken> right = evaluate(tree.right());
+        var right = evaluate(tree.right());
 
         if(right.isFailure())
-            return pushError(right.getMessage());
+            return right;
 
 
 
         Optional<Operator> operator = getOperator(tree.getToken().kind);
 
         if(operator.isPresent()){
-            Optional<LiteralValueToken> r = operator.get().evaluate(left.get(), right.get());
+            Optional<Value> r = operator.get().evaluate(left.get(), right.get());
             if(r.isEmpty())
-                return Result.failure("Unable to apply '"+operator.get().getTokenKind().literal+"' on '"+Type.typeOf(left.get().kind)+"' and '"+Type.typeOf(right.get().kind)+"'");
+                return Result.failure(new StackableErrorBuilder("Unable to apply '"+operator.get().getTokenKind().literal+"' on '"+left.get().type()+"' and '"+right.get().type()+"'")
+                        .withStatement("")
+                        .build()
+                );
 
-            if(expectedReturn != null && !Type.ANY.equals(expectedReturn) && !expectedReturn.equals(Type.typeOf(r.get().kind)))
-                return Result.failure("Expected type "+expectedReturn+" but instead got "+Type.typeOf(r.get().kind));
+            if(expectedReturn != null && !Type.ANY.equals(expectedReturn) && !expectedReturn.equals(r.get().type()))
+                return Result.failure(new StackableErrorBuilder("Expected type "+expectedReturn+" but instead got "+r.get().type())
+                        .withStatement("")
+                        .build()
+                );
 
             return Result.success(r.get());
         }
 
-        return pushError("Unknown operator: \""+tree.getToken().kind.literal+"\"");
+        return Result.failure(new StackableErrorBuilder("Unknown operator: \""+tree.getToken().kind.literal+"\"")
+                .withStatement("")
+                .build()
+        );
     }
 
-    public Result<LiteralValueToken> evaluate(ASTNode tree){return evaluate(tree, null);}
+    public Result<Value, StackableError> evaluate(ASTNode tree){return evaluate(tree, null);}
 
     private Optional<Operator> getOperator(TokenKind tokenKind){
         return Arrays.stream(Operator.OPERATORS).filter(e  -> e.getTokenKind().equals(tokenKind)).findFirst();
     }
 
-    public Result<ASTNode> buildTree(List<Token> tokens){
+    public Result<ASTNode, StackableError> buildTree(List<Token> tokens){
 
         if(tokens.isEmpty())
             return Result.success(null);
@@ -164,15 +196,18 @@ public class ExpressionEvaluator extends ResultProvider {
         int mainOperatorIndex = findMainOperatorIndex(tokens);
 
         if(mainOperatorIndex == -1)
-            return pushError("Unexpected error");
+            return Result.failure(new StackableErrorBuilder("Unexpected error")
+                    .withStatement("")
+                    .build()
+            );
 
 
         Token operator = tokens.get(mainOperatorIndex);
-        Result<ASTNode> left = buildTree(tokens.subList(0, mainOperatorIndex));
+        var left = buildTree(tokens.subList(0, mainOperatorIndex));
         if(left.isFailure())
             return left;
 
-        Result<ASTNode> right = buildTree(tokens.subList(mainOperatorIndex+1, tokens.size()));
+        var right = buildTree(tokens.subList(mainOperatorIndex+1, tokens.size()));
         if(right.isFailure())
             return right;
 

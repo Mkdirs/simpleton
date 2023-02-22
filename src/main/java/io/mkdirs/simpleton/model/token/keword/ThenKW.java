@@ -5,5 +5,5 @@ import io.mkdirs.simpleton.model.token.TokenKind;
 
 public class ThenKW extends Token {
 
-    public ThenKW(){super(TokenKind.THEN_KW);}
+    public ThenKW(int line, int column){super(TokenKind.THEN_KW, line, column);}
 }

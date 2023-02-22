@@ -34,14 +34,14 @@ public class VariableAssignment extends TreeBuilder{
         if(!isValid(tokens))
             return super.build(tokens);
 
-        ASTNode root = new ASTNode(new Equals());
+        ASTNode root = new ASTNode(tokens.get(1));
 
         int indexOfEOL = tokens.indexOf(
                 tokens.stream()
                         .filter(e -> TokenKind.EOL.equals(e.kind))
                         .findFirst().orElse(null)
         );
-        Result<ASTNode> exprRes = evaluator.buildTree(tokens.subList(2, indexOfEOL));
+        var exprRes = evaluator.buildTree(tokens.subList(2, indexOfEOL));
 
         if(exprRes.isFailure())
             return new TreeBuilderResult(exprRes, 0);

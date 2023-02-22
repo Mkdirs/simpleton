@@ -5,7 +5,6 @@ import io.mkdirs.simpleton.evaluator.ASTNode;
 import io.mkdirs.simpleton.evaluator.ExpressionEvaluator;
 import io.mkdirs.simpleton.forest_builder.TreeBuilder;
 import io.mkdirs.simpleton.forest_builder.TreeBuilderResult;
-import io.mkdirs.simpleton.forest_builder.structure.AbstractStructure;
 import io.mkdirs.simpleton.model.token.Token;
 import io.mkdirs.simpleton.model.token.TokenKind;
 import io.mkdirs.simpleton.result.Result;
@@ -50,7 +49,7 @@ public class IfStructure extends AbstractStructure {
 
         var firstLine = tokens.subList(0, indexOfEOL);
 
-        Result<ASTNode> exprRes = evaluator.buildTree(firstLine.subList(2, firstLine.lastIndexOf(
+        var exprRes = evaluator.buildTree(firstLine.subList(2, firstLine.lastIndexOf(
                 firstLine.stream()
                         .filter(e -> TokenKind.R_PAREN.equals(e.kind))
                         .findFirst().orElse(null)

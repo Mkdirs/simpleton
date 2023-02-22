@@ -35,7 +35,7 @@ public class ReturnInstruction extends TreeBuilder{
         );
 
         if(!TokenKind.EOL.equals(tokens.get(1).kind)){
-            Result<ASTNode> res = evaluator.buildTree(tokens.subList(1, indexOfEOL));
+            var res = evaluator.buildTree(tokens.subList(1, indexOfEOL));
 
             if(res.isFailure())
                 return new TreeBuilderResult(res, 0);

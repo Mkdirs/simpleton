@@ -9,13 +9,16 @@ import io.mkdirs.simpleton.forest_builder.structure.IfStructure;
 import io.mkdirs.simpleton.forest_builder.structure.WhileStructure;
 import io.mkdirs.simpleton.lexer.Lexer;
 import io.mkdirs.simpleton.model.Type;
+import io.mkdirs.simpleton.model.Value;
+import io.mkdirs.simpleton.model.error.ErrorStack;
+import io.mkdirs.simpleton.model.error.StackableError;
+import io.mkdirs.simpleton.model.error.StackableErrorBuilder;
 import io.mkdirs.simpleton.model.token.EOL;
 import io.mkdirs.simpleton.model.token.Token;
 import io.mkdirs.simpleton.model.token.TokenKind;
 import io.mkdirs.simpleton.model.token.composite.Func;
 import io.mkdirs.simpleton.model.token.composite.VariableName;
 import io.mkdirs.simpleton.model.token.literal.LiteralValueToken;
-import io.mkdirs.simpleton.model.token.literal.VoidPlaceholder;
 import io.mkdirs.simpleton.result.Result;
 import io.mkdirs.simpleton.scope.FuncSignature;
 import io.mkdirs.simpleton.scope.Location;
@@ -42,10 +45,13 @@ public class Simpleton {
     }
 
 
-    public Result<LiteralValueToken> execute(List<ASTNode> nodes){
+    public Result<Value, StackableError> execute(List<ASTNode> nodes){
         Result lastResult = null;
 
         for(ASTNode node : nodes){
+            if(node == null)
+                continue;
+
             lastResult = execute(node);
 
             if(lastResult.isFailure() || lastResult.isTerminative())
@@ -53,17 +59,20 @@ public class Simpleton {
         }
 
         if(lastResult == null)
-            return Result.success(VoidPlaceholder.VOID);
+            return Result.success(Value.VOID);
 
         return lastResult;
     }
 
-    private Result<LiteralValueToken> execute(ASTNode node){
+    private Result<Value, StackableError> execute(ASTNode node){
         if(TokenKind.LET_KW.equals(node.getToken().kind)){
             String varName = ((VariableName) node.left().getToken()).name;
             Type type = Type.typeOf(node.right().getToken().kind);
             if(currentScope.getVariable(varName).isPresent()){
-                return Result.failure("Variable "+varName+" is already declared !");
+                return Result.failure(new StackableErrorBuilder("Variable "+varName+" is already declared !")
+                        .withStatement("")
+                        .build()
+                );
             }
 
             currentScope.pushVariable(varName, type);
@@ -74,16 +83,19 @@ public class Simpleton {
             if (TokenKind.VAR_NAME.equals(left.getToken().kind)) {
                 String varName = ((VariableName)left.getToken()).name;
                 if (!currentScope.getVariable(varName).isPresent()) {
-                    return Result.failure("Undeclared variable " + varName + " !");
+                    return Result.failure(new StackableErrorBuilder("Undeclared variable " + varName + " !")
+                            .withStatement("")
+                            .build()
+                    );
                 }
 
 
 
                 VariableHolder varHolder = currentScope.getVariable(varName).get();
-                Result<LiteralValueToken> exprRes = evaluator.evaluate(node.right(), varHolder.getType());
+                var exprRes = evaluator.evaluate(node.right(), varHolder.getType());
 
                 if (exprRes.isFailure()) {
-                    return Result.failure(exprRes.getMessage());
+                    return exprRes;
                 }
 
                 /*if (!varHolder.getType().equals(Type.typeOf(exprRes.get().kind)) && !Type.NULL.equals(Type.typeOf(exprRes.get().kind))) {
@@ -93,7 +105,7 @@ public class Simpleton {
                  */
                 VariableHolder v = currentScope.getVariable(varName).get();
                 if(Type.ANY.equals(v.getType())){
-                    Type t = Type.typeOf(exprRes.get().kind);
+                    Type t = exprRes.get().type();
                     currentScope.pushVariable(varName, t, exprRes.get());
                 }else
                     currentScope.getVariable(varName).get().setValue(exprRes.get());
@@ -103,25 +115,34 @@ public class Simpleton {
                 Type type = left.right() != null ? Type.typeOf(left.right().getToken().kind) : Type.ANY;
 
                 if (currentScope.getVariable(varName).isPresent()) {
-                    return Result.failure("Variable " + varName + " is already declared !");
+                    return Result.failure(new StackableErrorBuilder("Variable " + varName + " is already declared !")
+                            .withStatement("")
+                            .build()
+                    );
                 }
 
-                Result<LiteralValueToken> exprRes = evaluator.evaluate(node.right(), type);
+                var exprRes = evaluator.evaluate(node.right(), type);
 
                 if (exprRes.isFailure()) {
-                    return Result.failure(exprRes.getMessage());
+                    return exprRes;
                 }
 
                 if (Type.ANY.equals(type)) {
-                    type = Type.typeOf(exprRes.get().kind);
+                    type = exprRes.get().type();
                     if (Type.NULL.equals(type)) {
                         if(TokenKind.FUNC.equals(node.right().getToken().kind)){
                             var signature = this.currentScope.getFunctionSign((Func) node.right().getToken()).get();
                             if(Type.ANY.equals(signature.getReturnType()))
-                                return Result.failure("Cannot infer type of variable " + varName);
+                                return Result.failure(new StackableErrorBuilder("Cannot infer type of variable " + varName)
+                                        .withStatement("")
+                                        .build()
+                                );
                             type = signature.getReturnType();
                         }else
-                            return Result.failure("Cannot infer type of variable " + varName);
+                            return Result.failure(new StackableErrorBuilder("Cannot infer type of variable " + varName)
+                                    .withStatement("")
+                                    .build()
+                            );
                     }
                 }
 
@@ -137,13 +158,13 @@ public class Simpleton {
             }
 
         }else if(TokenKind.IF_KW.equals(node.getToken().kind)) {
-            Result<LiteralValueToken> exprRes = evaluator.evaluate(node.get(0), Type.BOOLEAN);
+            var exprRes = evaluator.evaluate(node.get(0), Type.BOOLEAN);
             if (exprRes.isFailure()) {
-                return Result.failure(exprRes.getMessage());
+                return exprRes;
             }
 
 
-            if ("true".equals(exprRes.get().value)) {
+            if ("true".equals(exprRes.get().value())) {
                 ASTNode body = node.get(1);
                 currentScope = currentScope.child();
                 evaluator.setScopeContext(currentScope);
@@ -168,9 +189,9 @@ public class Simpleton {
 
         }else if(TokenKind.WHILE_KW.equals(node.getToken().kind)) {
 
-            Result<LiteralValueToken> exprRes = evaluator.evaluate(node.get(0), Type.BOOLEAN);
+            var exprRes = evaluator.evaluate(node.get(0), Type.BOOLEAN);
             if (exprRes.isFailure()) {
-                return Result.failure(exprRes.getMessage());
+                return exprRes;
             }
 
 
@@ -178,9 +199,9 @@ public class Simpleton {
             evaluator.setScopeContext(currentScope);
             ASTNode body = node.get(1);
 
-            Result<LiteralValueToken> result = null;
+            Result<Value, StackableError> result = null;
 
-            while ("true".equals(exprRes.get().value)) {
+            while ("true".equals(exprRes.get().value())) {
 
                 result = execute(body.getChildren());
 
@@ -190,7 +211,7 @@ public class Simpleton {
 
                 exprRes = evaluator.evaluate(node.get(0), Type.BOOLEAN);
                 if (exprRes.isFailure()) {
-                    return Result.failure(exprRes.getMessage());
+                    return exprRes;
                 }
 
                 currentScope.flushVariables();
@@ -220,8 +241,8 @@ public class Simpleton {
 
             currentScope = currentScope.child();
             evaluator.setScopeContext(currentScope);
-            Result<LiteralValueToken> result = null;
-            while("true".equals(condRes.get().value)){
+            Result<Value, StackableError> result = null;
+            while("true".equals(condRes.get().value())){
                 result = execute(node.get(2).getChildren());
 
                 if(result.isFailure() || result.isTerminative())
@@ -247,8 +268,8 @@ public class Simpleton {
 
             if (TokenKind.FUNCTION_KW.equals(node.get(0).getToken().kind)) {
                 ASTNode function = node.get(0);
-                VariableName funcName = (VariableName) function.get(0).getToken();
-                String name = funcName.name;
+                Func func = (Func) function.get(0).getToken();
+                String name = func.name;
                 List<Map.Entry<String, Type>> entries = function.getChildren().subList(1, function.getChildren().size() - 2).stream()
                         .map(n -> Map.entry( ((VariableName)n.getToken()).name, Type.typeOf(n.get(0).getToken().kind)))
                         .collect(Collectors.toList());
@@ -265,15 +286,18 @@ public class Simpleton {
                 FuncSignature funcSign = new FuncSignature(name, params, returnType, location);
 
                 if(currentScope.hasFunctionSign(funcSign))
-                    return Result.failure("Function "+funcSign+" is already declared !");
+                    return Result.failure(new StackableErrorBuilder("Function "+funcSign+" is already declared !")
+                            .withStatement("")
+                            .build()
+                    );
 
                 currentScope.pushFunctionSign(funcSign);
             }
 
         }else if(TokenKind.RETURN_KW.equals(node.getToken().kind)){
-            Result res;
+            Result<Value, StackableError> res;
             if(node.isLeaf()){
-                res = Result.success(VoidPlaceholder.VOID);
+                res = Result.success(Value.VOID);
             }else{
                 res = evaluator.evaluate(node.get(0));
             }
@@ -286,43 +310,23 @@ public class Simpleton {
 
         }
 
-        return Result.success(VoidPlaceholder.VOID);
+        return Result.success(Value.VOID);
     }
 
 
-    public Result<List<Token>> buildTokens(String text){
-        String[] lines = text.split("\n");
-        int lineIndex = 0;
+    public Result<List<Token>, StackableError> buildTokens(String text){
+        Lexer lexer = new Lexer(text);
 
-        Lexer lexer = new Lexer();
-        List<Token> res = new ArrayList<>();
-
-        while(lineIndex < lines.length){
-            String line = lines[lineIndex];
-            evaluator.setStatement(line);
-            if(line.isBlank()){
-                lineIndex++;
-                continue;
-            }
-
-            Result<List<Token>> tokensResult = lexer.parse(line);
-            if(tokensResult.isFailure()){
-                return Result.failure(tokensResult.getMessage());
-            }
-
-            res.addAll(tokensResult.get());
-            res.add(new EOL());
-
-
-            lineIndex++;
+        var tokensResult = lexer.parse();
+        if(tokensResult.isFailure()){
+            return tokensResult;
         }
 
-
-        return Result.success(res);
+        return Result.success(tokensResult.get());
     }
 
 
-    public Result<List<ASTNode>> buildTrees(List<Token> tokens){
+    public Result<List<ASTNode>, StackableError> buildTrees(List<Token> tokens){
         List<ASTNode> res = new ArrayList<>();
         final TreeBuilder chain = new FullVariableInitialization(evaluator);
         chain.next(new PartialVariableInitialization(evaluator, chain))
@@ -343,7 +347,7 @@ public class Simpleton {
                 res.add(result.tree().get());
                 tokens = tokens.subList(result.jumpIndex(), tokens.size());
             }else{
-                return Result.failure(result.tree().getMessage());
+                return Result.failure(new StackableErrorBuilder(result.tree().err().highlightError()).build());
             }
 
 

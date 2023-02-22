@@ -40,7 +40,7 @@ public class StandaloneExpression extends TreeBuilder{
                         .findFirst().orElse(null)
         );
 
-        Result<ASTNode> res = evaluator.buildTree(tokens.subList(0, indexOfEOL));
+        var res = evaluator.buildTree(tokens.subList(0, indexOfEOL));
 
         if(res.isFailure())
             return new TreeBuilderResult(res, 0);

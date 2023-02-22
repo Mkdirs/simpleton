@@ -5,5 +5,5 @@ import io.mkdirs.simpleton.model.token.TokenKind;
 
 public class LowerThanEquals extends Token {
 
-    public LowerThanEquals(){super(TokenKind.LOWER_THAN_EQ);}
+    public LowerThanEquals(int line, int column){super(TokenKind.LOWER_THAN_EQ, line, column);}
 }

@@ -5,6 +5,7 @@ import io.mkdirs.simpleton.evaluator.ASTNode;
 import io.mkdirs.simpleton.evaluator.ExpressionEvaluator;
 import io.mkdirs.simpleton.forest_builder.TreeBuilder;
 import io.mkdirs.simpleton.forest_builder.TreeBuilderResult;
+import io.mkdirs.simpleton.model.error.StackableErrorBuilder;
 import io.mkdirs.simpleton.model.token.Token;
 import io.mkdirs.simpleton.model.token.TokenKind;
 import io.mkdirs.simpleton.model.token.composite.Func;
@@ -82,12 +83,16 @@ public class FunctionStructure extends AbstractStructure {
 
         var params = func.getBody().subList(1, func.getBody().size()-1);//tokens.subList(4, tokens.indexOf(Token.R_PAREN));
         if(!validParams(params))
-            return new TreeBuilderResult(Result.failure("Cannot resolve function parameters"), 0);
+            return new TreeBuilderResult(Result.failure(
+                    new StackableErrorBuilder("Cannot resolve function parameters")
+                            .withStatement("")
+                            .build()
+            ), 0);
 
-        ASTNode function = new ASTNode(new FunctionKW());
+        ASTNode function = new ASTNode(tokens.get(1));
 
         //Add the name
-        function.addChild(new ASTNode(new VariableName(func.name)));
+        function.addChild(new ASTNode(func));
 
         //Add the parameters
         Token name = null;

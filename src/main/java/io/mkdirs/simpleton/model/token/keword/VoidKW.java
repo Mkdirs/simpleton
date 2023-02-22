@@ -5,6 +5,6 @@ import io.mkdirs.simpleton.model.token.TokenKind;
 
 public class VoidKW extends Token {
 
-    public VoidKW(){super(TokenKind.VOID_KW);}
+    public VoidKW(int line, int column){super(TokenKind.VOID_KW, line, column);}
 
 }

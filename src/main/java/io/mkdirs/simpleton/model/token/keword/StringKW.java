@@ -5,6 +5,6 @@ import io.mkdirs.simpleton.model.token.TokenKind;
 
 public class StringKW extends Token {
 
-    public StringKW(){super(TokenKind.STRING_KW);}
+    public StringKW(int line, int column){super(TokenKind.STRING_KW, line, column);}
 
 }

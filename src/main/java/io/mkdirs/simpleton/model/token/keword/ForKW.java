@@ -5,5 +5,5 @@ import io.mkdirs.simpleton.model.token.TokenKind;
 
 public class ForKW extends Token {
 
-    public ForKW(){super(TokenKind.FOR_KW);}
+    public ForKW(int line, int column){super(TokenKind.FOR_KW, line, column);}
 }

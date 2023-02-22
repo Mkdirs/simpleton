@@ -7,8 +7,8 @@ public class VariableName extends Token implements IComposable{
 
     public final String name;
 
-    public VariableName(String name){
-        super(TokenKind.VAR_NAME);
+    public VariableName(String name, int line, int column){
+        super(TokenKind.VAR_NAME, line, column);
         this.name = name;
     }
 
@@ -16,7 +16,7 @@ public class VariableName extends Token implements IComposable{
     @Override
     public Token compose(Token token) {
         if(TokenKind.L_PAREN.equals(token.kind))
-            return new Func(name);
+            return new Func(name, line, column);
 
         return null;
     }
