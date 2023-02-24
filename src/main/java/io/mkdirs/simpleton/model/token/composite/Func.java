@@ -46,7 +46,7 @@ public class Func extends Token {
         var res =  evaluator.buildTree(tokens);
 
         if(res.isFailure())
-            return Result.failure(new StackableErrorBuilder(res.err().highlightError()).build());
+            return Result.failure(res.err());
 
         var resToken = evaluator.evaluate(res.get());
 

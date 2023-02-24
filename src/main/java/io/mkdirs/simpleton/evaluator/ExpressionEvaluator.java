@@ -65,7 +65,7 @@ public class ExpressionEvaluator{
                 Result<FuncSignature, StackableError> signatureResult = this.scopeContext.getFunctionSign(func);
 
                 if(signatureResult.isFailure())
-                    return Result.failure(new StackableErrorBuilder(signatureResult.err().highlightError()).build());
+                    return Result.failure(signatureResult.err());
 
                 FuncSignature signature = signatureResult.get();
 
@@ -197,7 +197,6 @@ public class ExpressionEvaluator{
 
         if(mainOperatorIndex == -1)
             return Result.failure(new StackableErrorBuilder("Unexpected error")
-                    .withStatement("")
                     .build()
             );
 

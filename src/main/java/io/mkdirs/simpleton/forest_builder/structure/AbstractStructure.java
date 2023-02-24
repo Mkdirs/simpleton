@@ -33,11 +33,18 @@ public abstract class AbstractStructure extends TreeBuilder {
         while( end == null && !temp.isEmpty()){
 
 
+
+
             if(TokenKind.R_BRACKET.equals(temp.get(0).kind)){
                 end = new ASTNode(null);
                 continue;
             }
 
+            if(TokenKind.EOL.equals (temp.get(0).kind)){
+                temp = temp.subList(1, temp.size());
+                jmp += 1;
+                continue;
+            }
 
             var result = this.head.build(temp);
 

@@ -6,6 +6,7 @@ import java.util.List;
 public class StackableErrorBuilder{
     private final String message;
     private String statement = "";
+    private int line = -1;
     private final List<Cursor> cursors = new ArrayList<>();
 
     public StackableErrorBuilder(String message){
@@ -15,6 +16,11 @@ public class StackableErrorBuilder{
     public StackableErrorBuilder withStatement(String statement){
         this.statement = statement;
         return  this;
+    }
+
+    public StackableErrorBuilder withLine(int line){
+        this.line = line;
+        return this;
     }
 
     public StackableErrorBuilder withCursor(int start, int length){
@@ -28,7 +34,7 @@ public class StackableErrorBuilder{
     }
 
     public StackableError build(){
-        return new StackableError(message, statement, cursors.toArray(Cursor[]::new));
+        return new StackableError(message, statement, line, cursors.toArray(Cursor[]::new));
     }
 
 }

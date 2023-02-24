@@ -1,6 +1,7 @@
 package io.mkdirs.simpleton.application;
 
 import io.mkdirs.simpleton.evaluator.ASTNode;
+import io.mkdirs.simpleton.model.error.ErrorStack;
 import io.mkdirs.simpleton.model.token.Token;
 import io.mkdirs.simpleton.model.token.TokenKind;
 import io.mkdirs.simpleton.result.Result;
@@ -41,6 +42,7 @@ public class Main {
 
             var tokensRes = simpleton.buildTokens(text);
             if(tokensRes.isFailure()){
+                System.err.println("Lexing phase failed:");
                 System.err.println(tokensRes.err().highlightError());
                 return;
             }
@@ -48,6 +50,7 @@ public class Main {
             var nodesRes = simpleton.buildTrees(tokensRes.get());
 
             if(nodesRes.isFailure()){
+                System.err.println("Abstract syntax forest build phase failed:");
                 System.err.println(nodesRes.err().highlightError());
                 return;
             }
@@ -55,8 +58,12 @@ public class Main {
 
 
             var result = simpleton.execute(nodesRes.get());
-            if(result.isFailure())
-                System.err.println(result.err().highlightError());
+            if(result.isFailure()) {
+                System.err.println("Execution phase failed:");
+                while(!ErrorStack.STACK.isEmpty()) {
+                    System.err.println(ErrorStack.STACK.pop().highlightError());
+                }
+            }
         } catch (IOException e) {
             System.err.println(e.getMessage());
         }

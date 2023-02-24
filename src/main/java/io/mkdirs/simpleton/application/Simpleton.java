@@ -46,7 +46,7 @@ public class Simpleton {
 
 
     public Result<Value, StackableError> execute(List<ASTNode> nodes){
-        Result lastResult = null;
+        Result<Value, StackableError> lastResult = null;
 
         for(ASTNode node : nodes){
             if(node == null)
@@ -54,8 +54,11 @@ public class Simpleton {
 
             lastResult = execute(node);
 
-            if(lastResult.isFailure() || lastResult.isTerminative())
+            if(lastResult.isFailure() || lastResult.isTerminative()) {
+                if(lastResult.isFailure())
+                    ErrorStack.STACK.push(lastResult.err());
                 return lastResult;
+            }
         }
 
         if(lastResult == null)
@@ -340,6 +343,11 @@ public class Simpleton {
                 .next(new StandaloneExpression(evaluator, chain));
 
         while(!tokens.isEmpty()){
+
+            if(TokenKind.EOL.equals(tokens.get(0).kind)){
+                tokens = tokens.subList(1, tokens.size());
+                continue;
+            }
 
             TreeBuilderResult result = chain.build(tokens);
 

@@ -138,7 +138,7 @@ public class Lexer{
                     this.charIndex+=result.get().getCharsToSkip();
                     continue;
                 }else{
-                    return Result.failure(new StackableErrorBuilder(result.err().highlightError()).build());
+                    return Result.failure(result.err());
                 }
             }
 
@@ -206,15 +206,16 @@ public class Lexer{
 
         }
 
-        //lonelyComma = func.getBody().isEmpty() ? lonelyComma || false : lonelyComma;
+        //System.out.println(tokens.get(i-2).toText());
+        lonelyComma = lonelyComma || TokenKind.COMMA.equals(tokens.get(i-2).kind);
 
         if(lonelyComma)
-            return Result.failure(new StackableErrorBuilder("Error lonely comma detected")
+            return Result.failure(new StackableErrorBuilder("Cannot parse function: lonely comma detected")
                     .build()
             );
 
         if(openParen > 0)
-            return Result.failure(new StackableErrorBuilder("Error unclosed parenthesis")
+            return Result.failure(new StackableErrorBuilder("Cannot parse function: unclosed parenthesis")
                     .build()
             );
 
@@ -224,14 +225,19 @@ public class Lexer{
     private Result<List<Token>, StackableError> buildFuncTokens(List<Token> tokens){
         List<Token> result = new ArrayList<>();
         int i = 0;
+        int l = 0;
         while(i < tokens.size()) {
             Token current = tokens.get(i);
+
+            if(TokenKind.EOL.equals(current.kind))
+                l++;
 
             if (TokenKind.FUNC.equals(current.kind)) {
                 var funcRes = buildFunc(tokens.subList(i, tokens.size()));
 
                 if(funcRes.isFailure())
                     return Result.failure(new StackableErrorBuilder(funcRes.err().message())
+                            .withLine(l)
                             .withStatement("")
                             .build()
                     );
@@ -282,19 +288,8 @@ public class Lexer{
     }
 
     private String currentStatement(){
-        StringBuilder s = new StringBuilder(text.substring(charIndex));
-        int i = charIndex;
-        char car = text.charAt(i);
 
-        while(i > 0 && car != '\n'){
-            i--;
-            car = text.charAt(i);
-            if(car != '\n')
-                s.insert(0, car);
-        }
-
-        int eol = s.indexOf("\n");
-        return s.substring(0, eol);
+        return text.split("\n")[line];
     }
 
 
@@ -366,7 +361,8 @@ public class Lexer{
             return Result.success(new LexerSubParsingResult(new BooleanLiteral(boolean_false, line, charIndex), boolean_false.length()));
 
 
-        return Result.failure(new StackableErrorBuilder("Unexpected error at parseBoolean")
+        return Result.failure(new StackableErrorBuilder("Cannot parse boolean: Unexpected error")
+                .withLine(line)
                 .withStatement(currentStatement())
                 .withCursor(0)
                 .build()
@@ -384,7 +380,8 @@ public class Lexer{
         }
 
         if(name.isEmpty())
-            return Result.failure(new StackableErrorBuilder("Unexpected error at parseVariableName")
+            return Result.failure(new StackableErrorBuilder("Cannot parse variable name: Unexpected error")
+                    .withLine(line)
                     .withStatement(currentStatement())
                     .withCursor(0)
                     .build()
@@ -397,7 +394,8 @@ public class Lexer{
     private Result<LexerSubParsingResult, StackableError> parseCharacter(){
         //Begin
         if(!seekTo(this.charIndex).equals('\'')) {
-            return Result.failure(new StackableErrorBuilder("Unexpected error at parseCharacter")
+            return Result.failure(new StackableErrorBuilder("Cannot parse character: Unexpected error")
+                    .withLine(line)
                     .withStatement(currentStatement())
                     .withCursor(0)
                     .build()
@@ -417,7 +415,8 @@ public class Lexer{
             closed = true;
 
         if(!closed){
-            return Result.failure(new StackableErrorBuilder("Unclosed character literal")
+            return Result.failure(new StackableErrorBuilder("Cannot parse character: Unclosed character literal")
+                    .withLine(line)
                     .withStatement(currentStatement())
                     .withCursor(0)
                     .build()
@@ -425,7 +424,8 @@ public class Lexer{
         }
 
         if(value.length() == 0){
-            return Result.failure(new StackableErrorBuilder("Empty character literal")
+            return Result.failure(new StackableErrorBuilder("Cannot parse character: Empty character literal")
+                    .withLine(line)
                     .withStatement(currentStatement())
                     .withCursor(0)
                     .build()
@@ -436,7 +436,8 @@ public class Lexer{
             value = "\\"+value.charAt(1);
 
         }else if(value.length() > 1){
-            return Result.failure(new StackableErrorBuilder("Too many characters in character literal")
+            return Result.failure(new StackableErrorBuilder("Cannot parse character: Too many characters in character literal")
+                    .withLine(line)
                     .withStatement(currentStatement())
                     .withCursor(0)
                     .build()
@@ -451,7 +452,8 @@ public class Lexer{
     private Result<LexerSubParsingResult, StackableError> parseString(){
         //Begin
         if(!seekTo(this.charIndex).equals('\"')) {
-            return Result.failure(new StackableErrorBuilder("Unexpected error at parseString")
+            return Result.failure(new StackableErrorBuilder("Cannot parse string: Unexpected error")
+                    .withLine(line)
                     .withStatement(currentStatement())
                     .withCursor(0)
                     .build()
@@ -472,7 +474,8 @@ public class Lexer{
             closed = true;
 
         if(!closed){
-            return Result.failure(new StackableErrorBuilder("Unclosed string literal")
+            return Result.failure(new StackableErrorBuilder("Cannot parse string: Unclosed string literal")
+                    .withLine(line)
                     .withStatement(currentStatement())
                     .withCursor(0)
                     .build()
@@ -485,7 +488,8 @@ public class Lexer{
 
     private Result<LexerSubParsingResult, StackableError> parseNumber(){
         if(!Character.isDigit(seekTo(this.charIndex))){
-            return Result.failure(new StackableErrorBuilder("Unexpected error at parseNumber")
+            return Result.failure(new StackableErrorBuilder("Cannot parse number: Unexpected error")
+                    .withLine(line)
                     .withStatement(currentStatement())
                     .withCursor(0)
                     .build()
@@ -495,8 +499,9 @@ public class Lexer{
         String rawValue = "";
         boolean isInteger = true;
         int offset = 0;
+        boolean error = false;
 
-        while(Character.isDigit(seekTo(this.charIndex+offset))){
+        while(!error && Character.isDigit(seekTo(this.charIndex+offset))){
             rawValue += seekTo(this.charIndex+offset);
             offset++;
 
@@ -504,8 +509,19 @@ public class Lexer{
                 isInteger = false;
                 rawValue+='.';
                 offset++;
+
+                if(!Character.isDigit(seekTo(this.charIndex+offset)))
+                    error = true;
             }
         }
+
+        if(error)
+            return Result.failure(new StackableErrorBuilder("Cannot parse number: This is not a number")
+                    .withLine(line)
+                    .withStatement(currentStatement())
+                    .withCursor(offset)
+                    .build()
+            );
 
 
         Token type = null;
