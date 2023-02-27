@@ -4,12 +4,16 @@ Simpleton is a basic scripting language I made for fun.\
 It can run simple CLI programs.
 
 # Getting Started
+- [VSCode Extension](#vscode-extension)
 - [Variable Declaration](#variable-declaration)
 - [Variable Assignment](#variable-assignment)
 - [Operations](#operations)
 - [Control Structures](#control-structures)
 - [Functions](#functions)
 - [Example](#examples)
+
+# VSCode Extension
+If you want syntax highlighting in VSCode go [here](https://github.com/Mkdirs/simpleton-vscode-extension/releases/latest) and follow the instructions.
 
 # Variable Declaration
 
